@@ -1056,15 +1056,27 @@ function badgeHTML(estado) {
   return '<span class="badge ' + cls + '">' + estado + '</span>';
 }
 
+function formatTime(t) {
+  if (!t) return '';
+  if (typeof t === 'string' && t.includes('T')) {
+    // ISO date like 1899-12-30T10:00:00.000Z
+    const d = new Date(t);
+    return d.getUTCHours().toString().padStart(2,'0') + ':' + d.getUTCMinutes().toString().padStart(2,'0');
+  }
+  return t;
+}
+
 function citaCardHTML(cita) {
-  return '<div class="card clickable" data-cita-id="' + cita.id + '">' +
+  const id = cita.idCita || cita.id;
+  const hora = formatTime(cita.horaInicio || cita.hora);
+  return '<div class="card clickable" data-cita-id="' + id + '">' +
     '<div class="cita-card-header">' +
       '<span class="cita-card-service">' + cita.servicio + '</span>' +
       badgeHTML(cita.estado) +
     '</div>' +
     '<div class="cita-card-details">' +
       '<span class="cita-card-detail">&#128197; <span>' + formatDate(cita.fecha) + '</span></span>' +
-      '<span class="cita-card-detail">&#128336; <span>' + cita.hora + '</span></span>' +
+      '<span class="cita-card-detail">&#128336; <span>' + hora + '</span></span>' +
     '</div>' +
   '</div>';
 }
@@ -1073,7 +1085,7 @@ function citaCardHTML(cita) {
 // DASHBOARD
 // ====================================
 async function loadCitas() {
-  const res = await apiGet({ action: 'getCitas', clienteId: currentCliente.id });
+  const res = await apiPost({ action: 'getCitas', idToken: currentIdToken });
   if (res.success) {
     currentCitas = res.citas;
   }
@@ -1084,14 +1096,14 @@ function renderDashboard() {
 
   // Sort by date+time
   const sorted = [...currentCitas].sort((a, b) => {
-    const da = a.fecha + a.hora;
-    const db = b.fecha + b.hora;
+    const da = a.fecha + formatTime(a.horaInicio || a.hora);
+    const db = b.fecha + formatTime(b.horaInicio || b.hora);
     return da.localeCompare(db);
   });
 
   // Next upcoming (not cancelled)
   const hoy = new Date().toISOString().split('T')[0];
-  const proxima = sorted.find(c => c.fecha >= '2026-03-12' && c.estado !== 'Cancelada');
+  const proxima = sorted.find(c => c.fecha >= hoy && c.estado !== 'Cancelada');
 
   const proxContainer = $('proximaCitaContainer');
   if (proxima) {
@@ -1101,7 +1113,7 @@ function renderDashboard() {
   }
 
   // All future appointments
-  const futuras = sorted.filter(c => c.fecha >= '2026-03-12');
+  const futuras = sorted.filter(c => c.fecha >= hoy);
   const todasContainer = $('todasCitasContainer');
   if (futuras.length > 0) {
     todasContainer.innerHTML = futuras.map(c => citaCardHTML(c)).join('');
@@ -1112,7 +1124,7 @@ function renderDashboard() {
   // Attach click events
   document.querySelectorAll('.card.clickable[data-cita-id]').forEach(card => {
     card.addEventListener('click', () => {
-      const cita = currentCitas.find(c => c.id === card.dataset.citaId);
+      const cita = currentCitas.find(c => (c.idCita || c.id) === card.dataset.citaId);
       if (cita) openDetail(cita);
     });
   });
@@ -1152,9 +1164,9 @@ function openDetail(cita) {
     '<div style="margin-bottom:16px;">' + badgeHTML(cita.estado) + '</div>' +
     '<div class="detail-rows">' +
       '<div class="detail-row"><span class="label">Fecha</span><span class="value">' + formatDate(cita.fecha) + '</span></div>' +
-      '<div class="detail-row"><span class="label">Hora</span><span class="value">' + cita.hora + '</span></div>' +
+      '<div class="detail-row"><span class="label">Hora</span><span class="value">' + formatTime(cita.horaInicio || cita.hora) + '</span></div>' +
       '<div class="detail-row"><span class="label">Servicio</span><span class="value">' + cita.servicio + '</span></div>' +
-      '<div class="detail-row"><span class="label">Precio</span><span class="value">' + cita.precio + ' &euro;</span></div>' +
+      (cita.precio ? '<div class="detail-row"><span class="label">Precio</span><span class="value">' + cita.precio + ' &euro;</span></div>' : '') +
       '<div class="detail-row"><span class="label">Estado</span><span class="value">' + cita.estado + '</span></div>' +
     '</div>';
 
@@ -1182,8 +1194,7 @@ async function handleCancelRequest() {
   try {
     const res = await apiPost({
       action: 'cancelarCita',
-      idCita: selectedCita.id,
-      idCliente: currentCliente.id,
+      idCita: selectedCita.idCita || selectedCita.id,
       idToken: currentIdToken,
       motivo: ''
     });
@@ -1310,7 +1321,7 @@ function renderAdmin(data) {
     const sortedHoy = [...citasHoy].sort((a, b) => (a.horaInicio || a.hora || '').localeCompare(b.horaInicio || b.hora || ''));
     tbody.innerHTML = sortedHoy.map(c =>
       '<tr>' +
-        '<td>' + (c.horaInicio || c.hora || '') + '</td>' +
+        '<td>' + formatTime(c.horaInicio || c.hora || '') + '</td>' +
         '<td>' + (c.cliente || c.clienteNombre || '') + '</td>' +
         '<td>' + (c.servicio || '') + '</td>' +
         '<td>' + badgeHTML(c.estado) + '</td>' +
