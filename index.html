@@ -1,0 +1,1392 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>A Barbería de Raúl</title>
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#1a1a1a">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black">
+<meta name="apple-mobile-web-app-title" content="Barbería Raúl">
+<link rel="apple-touch-icon" href="icons/icon-192.png">
+<script src="https://accounts.google.com/gsi/client" async defer></script>
+<style>
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+:root {
+  --negro: #1a1a1a;
+  --dorado: #c8a96e;
+  --dorado-claro: #e0c992;
+  --gris-oscuro: #2d2d2d;
+  --gris: #3a3a3a;
+  --blanco: #f5f0e8;
+  --rojo: #c0392b;
+  --verde: #27ae60;
+  --amarillo: #f39c12;
+}
+
+html, body {
+  height: 100%;
+  font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+  background-color: var(--negro);
+  color: var(--blanco);
+  -webkit-tap-highlight-color: transparent;
+  overflow-x: hidden;
+}
+
+/* --- Scrollbar --- */
+::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar-track { background: var(--negro); }
+::-webkit-scrollbar-thumb { background: var(--gris); border-radius: 3px; }
+
+/* --- Utility --- */
+.hidden { display: none !important; }
+
+/* --- Views --- */
+.view {
+  display: none;
+  min-height: 100vh;
+  padding: 24px 16px 40px;
+  opacity: 0;
+  transform: translateY(12px);
+  transition: opacity 0.35s ease, transform 0.35s ease;
+}
+.view.active {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+.view.visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* --- Loading overlay --- */
+#loadingOverlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(26,26,26,0.85);
+  z-index: 1000;
+  justify-content: center;
+  align-items: center;
+}
+#loadingOverlay.active {
+  display: flex;
+}
+.spinner {
+  width: 48px;
+  height: 48px;
+  border: 4px solid var(--gris);
+  border-top-color: var(--dorado);
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* --- Toast --- */
+#toast {
+  position: fixed;
+  bottom: -80px;
+  left: 50%;
+  transform: translateX(-50%);
+  padding: 14px 24px;
+  border-radius: 10px;
+  font-size: 14px;
+  font-weight: 500;
+  z-index: 1100;
+  transition: bottom 0.35s ease;
+  max-width: 90%;
+  text-align: center;
+}
+#toast.show { bottom: 32px; }
+#toast.success { background: var(--verde); color: #fff; }
+#toast.error { background: var(--rojo); color: #fff; }
+#toast.info { background: var(--gris); color: var(--blanco); }
+
+/* --- Confirm Dialog --- */
+#confirmDialog {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(26,26,26,0.88);
+  z-index: 1050;
+  justify-content: center;
+  align-items: center;
+}
+#confirmDialog.active { display: flex; }
+.confirm-box {
+  background: var(--gris-oscuro);
+  border: 1px solid var(--gris);
+  border-radius: 14px;
+  padding: 28px 24px;
+  max-width: 340px;
+  width: 90%;
+  text-align: center;
+}
+.confirm-box h3 {
+  color: var(--dorado);
+  margin-bottom: 12px;
+  font-size: 18px;
+}
+.confirm-box p {
+  color: var(--blanco);
+  font-size: 14px;
+  margin-bottom: 24px;
+  line-height: 1.5;
+}
+.confirm-actions {
+  display: flex;
+  gap: 12px;
+}
+.confirm-actions button {
+  flex: 1;
+}
+
+/* --- Buttons --- */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 48px;
+  padding: 12px 24px;
+  border: none;
+  border-radius: 10px;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s, transform 0.1s, opacity 0.2s;
+  -webkit-user-select: none;
+  user-select: none;
+}
+.btn:active { transform: scale(0.97); }
+.btn-gold {
+  background: linear-gradient(135deg, var(--dorado), var(--dorado-claro));
+  color: var(--negro);
+}
+.btn-gold:hover { opacity: 0.9; }
+.btn-outline {
+  background: transparent;
+  border: 2px solid var(--dorado);
+  color: var(--dorado);
+}
+.btn-outline:hover { background: rgba(200,169,110,0.1); }
+.btn-danger {
+  background: var(--rojo);
+  color: #fff;
+}
+.btn-danger:hover { opacity: 0.9; }
+.btn-success {
+  background: var(--verde);
+  color: #fff;
+}
+.btn-secondary {
+  background: var(--gris);
+  color: var(--blanco);
+}
+.btn-secondary:hover { opacity: 0.85; }
+.btn-block {
+  width: 100%;
+}
+.btn-sm {
+  min-height: 40px;
+  padding: 8px 16px;
+  font-size: 14px;
+  border-radius: 8px;
+}
+
+/* --- Input --- */
+.input-group {
+  width: 100%;
+  max-width: 360px;
+  margin-bottom: 16px;
+}
+.input-group label {
+  display: block;
+  font-size: 13px;
+  color: var(--dorado);
+  margin-bottom: 6px;
+  font-weight: 500;
+}
+.input-field {
+  width: 100%;
+  padding: 14px 16px;
+  background: var(--gris-oscuro);
+  border: 2px solid var(--gris);
+  border-radius: 10px;
+  color: var(--blanco);
+  font-size: 16px;
+  font-family: inherit;
+  transition: border-color 0.2s;
+  outline: none;
+}
+.input-field:focus {
+  border-color: var(--dorado);
+}
+.input-field::placeholder {
+  color: #777;
+}
+
+/* --- Cards --- */
+.card {
+  background: var(--gris-oscuro);
+  border: 1px solid var(--gris);
+  border-radius: 14px;
+  padding: 20px;
+  width: 100%;
+  max-width: 420px;
+  transition: transform 0.15s, border-color 0.2s;
+}
+.card.clickable {
+  cursor: pointer;
+}
+.card.clickable:active {
+  transform: scale(0.98);
+  border-color: var(--dorado);
+}
+.card + .card {
+  margin-top: 12px;
+}
+
+/* --- Status Badge --- */
+.badge {
+  display: inline-block;
+  padding: 4px 12px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+.badge-confirmada { background: rgba(39,174,96,0.2); color: var(--verde); }
+.badge-pendiente { background: rgba(243,156,18,0.2); color: var(--amarillo); }
+.badge-cancelada { background: rgba(192,57,43,0.2); color: var(--rojo); }
+.badge-solicitada { background: rgba(243,156,18,0.2); color: var(--amarillo); }
+
+/* --- Header Bar --- */
+.header-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  max-width: 420px;
+  margin-bottom: 24px;
+}
+.header-bar .back-btn {
+  background: none;
+  border: none;
+  color: var(--dorado);
+  font-size: 28px;
+  cursor: pointer;
+  padding: 4px 8px;
+  min-width: 44px;
+  min-height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.header-bar .title {
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--dorado);
+}
+.header-bar .spacer {
+  width: 44px;
+}
+
+/* ===================== */
+/* LOGIN VIEW            */
+/* ===================== */
+#loginView {
+  justify-content: center;
+  min-height: 100vh;
+  text-align: center;
+}
+.logo-section {
+  margin-bottom: 40px;
+}
+.logo-icon {
+  font-size: 52px;
+  margin-bottom: 12px;
+  display: block;
+  color: var(--dorado);
+  filter: drop-shadow(0 2px 8px rgba(200,169,110,0.3));
+}
+.logo-name {
+  font-size: 28px;
+  font-weight: 700;
+  color: var(--dorado);
+  letter-spacing: 1px;
+  line-height: 1.2;
+}
+.logo-tagline {
+  font-size: 14px;
+  color: #999;
+  margin-top: 8px;
+  letter-spacing: 0.5px;
+}
+.login-form {
+  width: 100%;
+  max-width: 360px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+.login-error {
+  color: var(--rojo);
+  font-size: 13px;
+  margin-bottom: 8px;
+  min-height: 20px;
+}
+
+/* --- Google Sign-In container --- */
+.google-signin-container {
+  width: 100%;
+  max-width: 360px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+.google-btn-wrapper {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 16px;
+  min-height: 44px;
+}
+.google-signin-hint {
+  font-size: 13px;
+  color: #999;
+  margin-top: 4px;
+  margin-bottom: 16px;
+  line-height: 1.4;
+}
+.btn-demo {
+  background: var(--gris-oscuro);
+  border: 1px solid var(--gris);
+  color: var(--dorado);
+  font-size: 14px;
+  min-height: 40px;
+  padding: 8px 20px;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: border-color 0.2s, background 0.2s;
+  margin-top: 8px;
+}
+.btn-demo:hover {
+  border-color: var(--dorado);
+  background: rgba(200,169,110,0.08);
+}
+
+/* ===================== */
+/* DASHBOARD VIEW        */
+/* ===================== */
+#dashboardView {
+  padding-top: 16px;
+}
+.welcome-msg {
+  font-size: 24px;
+  font-weight: 700;
+  margin-bottom: 4px;
+  color: var(--blanco);
+  width: 100%;
+  max-width: 420px;
+}
+.welcome-sub {
+  font-size: 14px;
+  color: #999;
+  margin-bottom: 28px;
+  width: 100%;
+  max-width: 420px;
+}
+.section-label {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--dorado);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  margin-bottom: 12px;
+  width: 100%;
+  max-width: 420px;
+}
+.cita-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 10px;
+}
+.cita-card-service {
+  font-size: 17px;
+  font-weight: 600;
+  color: var(--blanco);
+}
+.cita-card-details {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.cita-card-detail {
+  font-size: 14px;
+  color: #aaa;
+}
+.cita-card-detail span {
+  color: var(--blanco);
+}
+.no-citas {
+  text-align: center;
+  color: #777;
+  padding: 32px 0;
+  font-size: 15px;
+}
+.dashboard-actions {
+  margin-top: 32px;
+  width: 100%;
+  max-width: 420px;
+}
+
+/* ===================== */
+/* DETAIL VIEW           */
+/* ===================== */
+#detailView { padding-top: 16px; }
+.detail-card {
+  text-align: center;
+  padding: 28px 20px;
+}
+.detail-service {
+  font-size: 22px;
+  font-weight: 700;
+  color: var(--dorado);
+  margin-bottom: 20px;
+}
+.detail-rows {
+  text-align: left;
+  margin-bottom: 24px;
+}
+.detail-row {
+  display: flex;
+  justify-content: space-between;
+  padding: 10px 0;
+  border-bottom: 1px solid var(--gris);
+  font-size: 15px;
+}
+.detail-row:last-child { border-bottom: none; }
+.detail-row .label { color: #999; }
+.detail-row .value { color: var(--blanco); font-weight: 500; }
+.detail-actions {
+  margin-top: 16px;
+  width: 100%;
+  max-width: 420px;
+}
+
+/* ===================== */
+/* ADMIN VIEW            */
+/* ===================== */
+#adminView { padding-top: 16px; }
+.admin-login-box {
+  max-width: 360px;
+  width: 100%;
+  text-align: center;
+  margin-top: 60px;
+}
+.admin-login-box h2 {
+  color: var(--dorado);
+  margin-bottom: 24px;
+  font-size: 22px;
+}
+.admin-dashboard {
+  width: 100%;
+  max-width: 520px;
+}
+.stats-row {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+  margin-bottom: 24px;
+}
+.stat-card {
+  background: var(--gris-oscuro);
+  border: 1px solid var(--gris);
+  border-radius: 12px;
+  padding: 16px 10px;
+  text-align: center;
+}
+.stat-number {
+  font-size: 28px;
+  font-weight: 700;
+  color: var(--dorado);
+}
+.stat-label {
+  font-size: 11px;
+  color: #999;
+  margin-top: 4px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+.admin-section {
+  margin-bottom: 24px;
+}
+.admin-section h3 {
+  color: var(--dorado);
+  font-size: 16px;
+  margin-bottom: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+.admin-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+.admin-table th {
+  text-align: left;
+  padding: 10px 8px;
+  color: var(--dorado);
+  border-bottom: 2px solid var(--gris);
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+.admin-table td {
+  padding: 10px 8px;
+  border-bottom: 1px solid var(--gris);
+  color: var(--blanco);
+  vertical-align: middle;
+}
+.admin-table tr:last-child td { border-bottom: none; }
+.request-actions {
+  display: flex;
+  gap: 6px;
+}
+.request-actions .btn {
+  min-height: 36px;
+  padding: 6px 12px;
+  font-size: 12px;
+  border-radius: 6px;
+}
+.admin-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 24px;
+}
+.admin-header h2 {
+  color: var(--dorado);
+  font-size: 20px;
+}
+
+/* --- Responsive --- */
+@media (max-width: 380px) {
+  .stats-row { grid-template-columns: 1fr 1fr; }
+  .admin-table { font-size: 12px; }
+  .admin-table th, .admin-table td { padding: 8px 4px; }
+}
+</style>
+</head>
+<body>
+
+<!-- Loading Overlay -->
+<div id="loadingOverlay">
+  <div class="spinner"></div>
+</div>
+
+<!-- Toast -->
+<div id="toast"></div>
+
+<!-- Confirm Dialog -->
+<div id="confirmDialog">
+  <div class="confirm-box">
+    <h3 id="confirmTitle">Confirmar</h3>
+    <p id="confirmMsg"></p>
+    <div class="confirm-actions">
+      <button class="btn btn-secondary" id="confirmCancel">Volver</button>
+      <button class="btn btn-danger" id="confirmOk">Confirmar</button>
+    </div>
+  </div>
+</div>
+
+<!-- ==================== -->
+<!-- LOGIN VIEW           -->
+<!-- ==================== -->
+<div id="loginView" class="view active visible">
+  <div class="logo-section" id="logoSection">
+    <span class="logo-icon">&#9986;</span>
+    <div class="logo-name">A Barbería de Raúl</div>
+    <div class="logo-tagline">Av. Santiago 35, A Estrada</div>
+  </div>
+  <div class="google-signin-container" id="googleSigninContainer">
+    <div class="google-btn-wrapper" id="googleBtnWrapper">
+      <!-- Google Sign-In button rendered here by GIS -->
+    </div>
+    <div class="login-error" id="loginError"></div>
+    <div class="google-signin-hint">Inicia sesión con tu cuenta de Google para gestionar tus citas</div>
+    <button class="btn-demo hidden" id="demoBtnLogin" type="button">Modo Demo</button>
+  </div>
+</div>
+
+<!-- ==================== -->
+<!-- DASHBOARD VIEW       -->
+<!-- ==================== -->
+<div id="dashboardView" class="view">
+  <div class="welcome-msg" id="welcomeMsg">Hola, Cliente</div>
+  <div class="welcome-sub">Bienvenido a tu barbería</div>
+
+  <div class="section-label">Tu próxima cita</div>
+  <div id="proximaCitaContainer" style="width:100%;max-width:420px;"></div>
+
+  <div class="section-label" style="margin-top:24px;">Todas tus citas</div>
+  <div id="todasCitasContainer" style="width:100%;max-width:420px;"></div>
+
+  <div class="dashboard-actions">
+    <button class="btn btn-outline btn-block" id="logoutBtn">Cerrar sesión</button>
+  </div>
+</div>
+
+<!-- ==================== -->
+<!-- DETAIL VIEW          -->
+<!-- ==================== -->
+<div id="detailView" class="view">
+  <div class="header-bar">
+    <button class="back-btn" id="detailBackBtn">&#8592;</button>
+    <span class="title">Detalle de cita</span>
+    <span class="spacer"></span>
+  </div>
+  <div class="card detail-card" id="detailCard" style="max-width:420px;">
+    <!-- populated by JS -->
+  </div>
+  <div class="detail-actions" id="detailActions">
+    <!-- populated by JS -->
+  </div>
+</div>
+
+<!-- ==================== -->
+<!-- ADMIN VIEW           -->
+<!-- ==================== -->
+<div id="adminView" class="view">
+  <!-- Admin Login -->
+  <div class="admin-login-box" id="adminLoginBox">
+    <h2>Panel de Gestión</h2>
+    <form id="adminLoginForm" autocomplete="off">
+      <div class="input-group" style="max-width:100%;">
+        <label for="adminPassInput">Contraseña</label>
+        <input type="password" id="adminPassInput" class="input-field" placeholder="Introduce la contraseña">
+      </div>
+      <div class="login-error" id="adminLoginError"></div>
+      <button type="submit" class="btn btn-gold btn-block" style="margin-top:8px;">Entrar</button>
+    </form>
+    <button class="btn btn-outline btn-block" style="margin-top:16px;" id="adminBackBtn">Volver al inicio</button>
+  </div>
+
+  <!-- Admin Dashboard -->
+  <div class="admin-dashboard hidden" id="adminDashboard">
+    <div class="admin-header">
+      <h2>Panel de Raúl</h2>
+      <button class="btn btn-sm btn-outline" id="adminLogoutBtn">Salir</button>
+    </div>
+
+    <div class="stats-row" id="adminStats"></div>
+
+    <div class="admin-section">
+      <h3>Citas de hoy</h3>
+      <div style="overflow-x:auto;">
+        <table class="admin-table" id="adminTodayTable">
+          <thead>
+            <tr><th>Hora</th><th>Cliente</th><th>Servicio</th><th>Estado</th></tr>
+          </thead>
+          <tbody id="adminTodayBody"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="admin-section">
+      <h3>Solicitudes de cancelación</h3>
+      <div style="overflow-x:auto;">
+        <table class="admin-table" id="adminRequestsTable">
+          <thead>
+            <tr><th>Cliente</th><th>Servicio</th><th>Fecha</th><th>Acción</th></tr>
+          </thead>
+          <tbody id="adminRequestsBody"></tbody>
+        </table>
+      </div>
+      <p id="noRequestsMsg" class="no-citas hidden" style="padding:16px 0;">No hay solicitudes pendientes</p>
+    </div>
+  </div>
+</div>
+
+<script>
+// ====================================
+// CONFIGURATION
+// ====================================
+const API_URL = 'https://script.google.com/macros/s/AKfycbwUnP7cSUy_b-nwxiPQ1FbYDaUkag4ZSGyBDpxAFxMFzpE-XqCCePZLoxysEssMxz4/exec';
+const MOCK_MODE = !API_URL; // Auto-enable mock if no API URL
+const GOOGLE_CLIENT_ID = '253527395479-lfd1qfkto0f2lrku336hn6ics468olbr.apps.googleusercontent.com';
+
+// ====================================
+// MOCK DATA
+// ====================================
+const MOCK_DATA = {
+  clientes: [
+    { id: 'c1', nombre: 'Carlos García', telefono: '612345678', email: 'carlos@gmail.com' },
+    { id: 'c2', nombre: 'Miguel Fernández', telefono: '623456789', email: 'miguel@gmail.com' },
+    { id: 'c3', nombre: 'Alejandro López', telefono: '634567890', email: 'alejandro@gmail.com' },
+    { id: 'c4', nombre: 'David Rodríguez', telefono: '645678901', email: 'david@gmail.com' }
+  ],
+  citas: [
+    { id: 'a1', clienteId: 'c1', servicio: 'Corte de pelo', fecha: '2026-03-13', hora: '10:00', precio: 15, estado: 'Confirmada' },
+    { id: 'a2', clienteId: 'c1', servicio: 'Barba', fecha: '2026-03-18', hora: '11:30', precio: 10, estado: 'Pendiente' },
+    { id: 'a3', clienteId: 'c2', servicio: 'Corte + Barba', fecha: '2026-03-12', hora: '09:30', precio: 22, estado: 'Confirmada' },
+    { id: 'a4', clienteId: 'c2', servicio: 'Corte de pelo', fecha: '2026-03-15', hora: '16:00', precio: 15, estado: 'Confirmada' },
+    { id: 'a5', clienteId: 'c3', servicio: 'Afeitado clásico', fecha: '2026-03-12', hora: '12:00', precio: 12, estado: 'Confirmada' },
+    { id: 'a6', clienteId: 'c3', servicio: 'Corte de pelo', fecha: '2026-03-20', hora: '10:30', precio: 15, estado: 'Cancelada' },
+    { id: 'a7', clienteId: 'c4', servicio: 'Corte + Barba', fecha: '2026-03-12', hora: '17:00', precio: 22, estado: 'Confirmada' },
+    { id: 'a8', clienteId: 'c4', servicio: 'Tinte', fecha: '2026-03-25', hora: '11:00', precio: 30, estado: 'Pendiente' },
+    { id: 'a9', clienteId: 'c1', servicio: 'Corte + Barba', fecha: '2026-03-12', hora: '14:00', precio: 22, estado: 'Confirmada' }
+  ],
+  solicitudes: [
+    { id: 's1', citaId: 'a3', clienteId: 'c2', clienteNombre: 'Miguel Fernández', servicio: 'Corte + Barba', fecha: '2026-03-12', motivo: 'No puedo asistir' }
+  ]
+};
+
+// ====================================
+// STATE
+// ====================================
+let currentView = 'login';
+let currentCliente = null;
+let currentCitas = [];
+let selectedCita = null;
+let currentIdToken = null;
+let adminToken = null;
+let logoTapCount = 0;
+let logoTapTimer = null;
+
+// ====================================
+// DOM REFERENCES
+// ====================================
+const $ = (id) => document.getElementById(id);
+const views = {
+  login: $('loginView'),
+  dashboard: $('dashboardView'),
+  detail: $('detailView'),
+  admin: $('adminView')
+};
+
+// ====================================
+// VIEW MANAGEMENT
+// ====================================
+function showView(name) {
+  Object.values(views).forEach(v => {
+    v.classList.remove('active', 'visible');
+  });
+  const target = views[name];
+  target.classList.add('active');
+  // Trigger reflow then animate
+  void target.offsetHeight;
+  requestAnimationFrame(() => target.classList.add('visible'));
+  currentView = name;
+  window.scrollTo(0, 0);
+}
+
+// ====================================
+// LOADING / TOAST / CONFIRM
+// ====================================
+function showLoading() { $('loadingOverlay').classList.add('active'); }
+function hideLoading() { $('loadingOverlay').classList.remove('active'); }
+
+function showToast(msg, type = 'info') {
+  const t = $('toast');
+  t.textContent = msg;
+  t.className = type + ' show';
+  setTimeout(() => t.classList.remove('show'), 3000);
+}
+
+function showConfirm(title, msg, okText, okClass) {
+  return new Promise(resolve => {
+    $('confirmTitle').textContent = title;
+    $('confirmMsg').textContent = msg;
+    const okBtn = $('confirmOk');
+    okBtn.textContent = okText || 'Confirmar';
+    okBtn.className = 'btn ' + (okClass || 'btn-danger');
+    $('confirmDialog').classList.add('active');
+
+    function cleanup() {
+      $('confirmDialog').classList.remove('active');
+      $('confirmOk').removeEventListener('click', onOk);
+      $('confirmCancel').removeEventListener('click', onCancel);
+    }
+    function onOk() { cleanup(); resolve(true); }
+    function onCancel() { cleanup(); resolve(false); }
+    $('confirmOk').addEventListener('click', onOk);
+    $('confirmCancel').addEventListener('click', onCancel);
+  });
+}
+
+// ====================================
+// GOOGLE SIGN-IN
+// ====================================
+function handleGoogleCredential(response) {
+  const idToken = response.credential;
+  currentIdToken = idToken;
+  sessionStorage.setItem('googleIdToken', idToken);
+  performLogin(idToken);
+}
+
+async function performLogin(idToken) {
+  $('loginError').textContent = '';
+  showLoading();
+  try {
+    const res = await apiPost({ action: 'getCliente', idToken: idToken });
+    if (!res.success) {
+      $('loginError').textContent = res.error || 'Cliente no encontrado.';
+      hideLoading();
+      sessionStorage.removeItem('googleIdToken');
+      currentIdToken = null;
+      return;
+    }
+    currentCliente = res.cliente;
+    await loadCitas();
+    hideLoading();
+    renderDashboard();
+    showView('dashboard');
+  } catch (err) {
+    hideLoading();
+    $('loginError').textContent = err.message;
+    sessionStorage.removeItem('googleIdToken');
+    currentIdToken = null;
+  }
+}
+
+function initGoogleSignIn() {
+  // Always show demo button in mock mode
+  if (MOCK_MODE) {
+    $('demoBtnLogin').classList.remove('hidden');
+  }
+
+  // Always try to initialize Google Sign-In if the library is loaded and we have a client ID
+  if (typeof google !== 'undefined' && google.accounts && GOOGLE_CLIENT_ID && !GOOGLE_CLIENT_ID.includes('TU_CLIENT_ID')) {
+    google.accounts.id.initialize({
+      client_id: GOOGLE_CLIENT_ID,
+      callback: handleGoogleCredential
+    });
+    google.accounts.id.renderButton(
+      $('googleBtnWrapper'),
+      {
+        theme: 'filled_black',
+        size: 'large',
+        shape: 'rectangular',
+        text: 'signin_with',
+        locale: 'es',
+        width: 300
+      }
+    );
+  } else if (typeof google === 'undefined' || !google.accounts) {
+    // GIS library not loaded yet, try again shortly
+    setTimeout(initGoogleSignIn, 500);
+  }
+}
+
+// Session persistence: check for stored token on page load
+function checkStoredSession() {
+  const storedToken = sessionStorage.getItem('googleIdToken');
+  if (storedToken) {
+    currentIdToken = storedToken;
+    performLogin(storedToken);
+  }
+}
+
+// ====================================
+// API CALLS
+// ====================================
+async function apiGet(params) {
+  if (MOCK_MODE) return mockApiGet(params);
+  try {
+    const qs = new URLSearchParams(params).toString();
+    const res = await fetch(API_URL + '?' + qs, { redirect: 'follow' });
+    const text = await res.text();
+    try { return JSON.parse(text); } catch (e) { throw new Error('Respuesta inválida del servidor'); }
+  } catch (e) {
+    if (e.message === 'Respuesta inválida del servidor') throw e;
+    throw new Error('No se pudo conectar con el servidor. Inténtalo de nuevo.');
+  }
+}
+
+async function apiPost(body) {
+  if (MOCK_MODE) return mockApiPost(body);
+  try {
+    // Apps Script redirects POST requests (302). Using no-cors won't let us read the response.
+    // Solution: send as text/plain to avoid CORS preflight, and follow redirects.
+    const res = await fetch(API_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+      body: JSON.stringify(body),
+      redirect: 'follow'
+    });
+    const text = await res.text();
+    try { return JSON.parse(text); } catch (e) { throw new Error('Respuesta inválida del servidor'); }
+  } catch (e) {
+    if (e.message === 'Respuesta inválida del servidor') throw e;
+    throw new Error('No se pudo conectar con el servidor. Inténtalo de nuevo.');
+  }
+}
+
+// ====================================
+// MOCK API
+// ====================================
+function mockDelay() {
+  return new Promise(r => setTimeout(r, 400 + Math.random() * 400));
+}
+
+async function mockApiGet(params) {
+  await mockDelay();
+  const action = params.action;
+
+  if (action === 'getCitas') {
+    const citas = MOCK_DATA.citas.filter(c => c.clienteId === params.clienteId);
+    return { success: true, citas };
+  }
+
+  if (action === 'adminLogin') {
+    if (params.password === 'raul2024') {
+      return { success: true, token: 'mock-admin-token-xyz' };
+    }
+    return { success: false, error: 'Contraseña incorrecta.' };
+  }
+
+  if (action === 'getAdmin') {
+    const hoy = new Date().toISOString().split('T')[0];
+    const citasHoy = MOCK_DATA.citas.filter(c => c.fecha === '2026-03-12');
+    const totalClientes = MOCK_DATA.clientes.length;
+    return {
+      success: true,
+      data: {
+        citasHoy: citasHoy.map(c => {
+          const cl = MOCK_DATA.clientes.find(x => x.id === c.clienteId);
+          return { ...c, clienteNombre: cl ? cl.nombre : 'Desconocido' };
+        }),
+        solicitudes: MOCK_DATA.solicitudes,
+        stats: {
+          totalClientes,
+          citasHoy: citasHoy.length,
+          solicitudesPendientes: MOCK_DATA.solicitudes.length
+        }
+      }
+    };
+  }
+
+  return { success: false, error: 'Acción no reconocida.' };
+}
+
+async function mockApiPost(body) {
+  await mockDelay();
+
+  if (body.action === 'getCliente') {
+    // In mock mode, try to decode the Google JWT to get real user info
+    try {
+      const payload = JSON.parse(atob(body.idToken.split('.')[1]));
+      if (payload.name && payload.email) {
+        return { success: true, cliente: {
+          id: 'CLI-GOOGLE', nombre: payload.name, email: payload.email,
+          foto: payload.picture || '', telefono: ''
+        }};
+      }
+    } catch (e) { /* not a real JWT, use mock data */ }
+    const cliente = MOCK_DATA.clientes[0];
+    return { success: true, cliente };
+  }
+
+  if (body.action === 'cancelarCita') {
+    const cita = MOCK_DATA.citas.find(c => c.id === body.idCita);
+    if (!cita) return { success: false, error: 'Cita no encontrada.' };
+    cita.estado = 'Cancelación solicitada';
+    const cl = MOCK_DATA.clientes.find(c => c.id === body.idCliente);
+    MOCK_DATA.solicitudes.push({
+      id: 's' + Date.now(),
+      citaId: body.idCita,
+      clienteId: body.idCliente,
+      clienteNombre: cl ? cl.nombre : 'Desconocido',
+      servicio: cita.servicio,
+      fecha: cita.fecha,
+      motivo: body.motivo || ''
+    });
+    return { success: true, message: 'Solicitud de cancelación enviada correctamente.' };
+  }
+
+  if (body.action === 'procesarSolicitud') {
+    const idx = MOCK_DATA.solicitudes.findIndex(s => s.id === body.idSolicitud);
+    if (idx === -1) return { success: false, error: 'Solicitud no encontrada.' };
+    const sol = MOCK_DATA.solicitudes[idx];
+    const cita = MOCK_DATA.citas.find(c => c.id === sol.citaId);
+    if (body.estado === 'aprobada') {
+      if (cita) cita.estado = 'Cancelada';
+      MOCK_DATA.solicitudes.splice(idx, 1);
+      return { success: true, message: 'Cancelación aprobada.' };
+    } else {
+      if (cita) cita.estado = 'Confirmada';
+      MOCK_DATA.solicitudes.splice(idx, 1);
+      return { success: true, message: 'Cancelación rechazada. La cita se mantiene.' };
+    }
+  }
+
+  return { success: false, error: 'Acción no reconocida.' };
+}
+
+// ====================================
+// HELPERS
+// ====================================
+function formatDate(dateStr) {
+  const [y, m, d] = dateStr.split('-');
+  const date = new Date(y, m - 1, d);
+  const days = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'];
+  const months = ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio', 'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre'];
+  return days[date.getDay()] + ', ' + d + ' de ' + months[date.getMonth()] + ' de ' + y;
+}
+
+function formatDateShort(dateStr) {
+  const [y, m, d] = dateStr.split('-');
+  return d + '/' + m + '/' + y;
+}
+
+function badgeHTML(estado) {
+  let cls = 'badge-pendiente';
+  if (estado === 'Confirmada') cls = 'badge-confirmada';
+  else if (estado === 'Cancelada') cls = 'badge-cancelada';
+  else if (estado.includes('solicitada') || estado.includes('Solicitada')) cls = 'badge-solicitada';
+  return '<span class="badge ' + cls + '">' + estado + '</span>';
+}
+
+function citaCardHTML(cita) {
+  return '<div class="card clickable" data-cita-id="' + cita.id + '">' +
+    '<div class="cita-card-header">' +
+      '<span class="cita-card-service">' + cita.servicio + '</span>' +
+      badgeHTML(cita.estado) +
+    '</div>' +
+    '<div class="cita-card-details">' +
+      '<span class="cita-card-detail">&#128197; <span>' + formatDate(cita.fecha) + '</span></span>' +
+      '<span class="cita-card-detail">&#128336; <span>' + cita.hora + '</span></span>' +
+    '</div>' +
+  '</div>';
+}
+
+// ====================================
+// DASHBOARD
+// ====================================
+async function loadCitas() {
+  const res = await apiGet({ action: 'getCitas', clienteId: currentCliente.id });
+  if (res.success) {
+    currentCitas = res.citas;
+  }
+}
+
+function renderDashboard() {
+  $('welcomeMsg').textContent = 'Hola, ' + currentCliente.nombre;
+
+  // Sort by date+time
+  const sorted = [...currentCitas].sort((a, b) => {
+    const da = a.fecha + a.hora;
+    const db = b.fecha + b.hora;
+    return da.localeCompare(db);
+  });
+
+  // Next upcoming (not cancelled)
+  const hoy = new Date().toISOString().split('T')[0];
+  const proxima = sorted.find(c => c.fecha >= '2026-03-12' && c.estado !== 'Cancelada');
+
+  const proxContainer = $('proximaCitaContainer');
+  if (proxima) {
+    proxContainer.innerHTML = citaCardHTML(proxima);
+  } else {
+    proxContainer.innerHTML = '<div class="no-citas">No tienes citas próximas</div>';
+  }
+
+  // All future appointments
+  const futuras = sorted.filter(c => c.fecha >= '2026-03-12');
+  const todasContainer = $('todasCitasContainer');
+  if (futuras.length > 0) {
+    todasContainer.innerHTML = futuras.map(c => citaCardHTML(c)).join('');
+  } else {
+    todasContainer.innerHTML = '<div class="no-citas">No tienes citas programadas</div>';
+  }
+
+  // Attach click events
+  document.querySelectorAll('.card.clickable[data-cita-id]').forEach(card => {
+    card.addEventListener('click', () => {
+      const cita = currentCitas.find(c => c.id === card.dataset.citaId);
+      if (cita) openDetail(cita);
+    });
+  });
+}
+
+$('logoutBtn').addEventListener('click', () => {
+  currentCliente = null;
+  currentCitas = [];
+  currentIdToken = null;
+  sessionStorage.removeItem('googleIdToken');
+  // Disable Google auto-select on next page load
+  if (typeof google !== 'undefined' && google.accounts) {
+    google.accounts.id.disableAutoSelect();
+  }
+  $('loginError').textContent = '';
+  showView('login');
+});
+
+// ====================================
+// DEMO MODE LOGIN (mock only)
+// ====================================
+$('demoBtnLogin').addEventListener('click', () => {
+  // Simulate a Google Sign-In with a fake token
+  currentIdToken = 'mock-demo-token';
+  sessionStorage.setItem('googleIdToken', currentIdToken);
+  performLogin(currentIdToken);
+});
+
+// ====================================
+// DETAIL
+// ====================================
+function openDetail(cita) {
+  selectedCita = cita;
+  const card = $('detailCard');
+  card.innerHTML =
+    '<div class="detail-service">' + cita.servicio + '</div>' +
+    '<div style="margin-bottom:16px;">' + badgeHTML(cita.estado) + '</div>' +
+    '<div class="detail-rows">' +
+      '<div class="detail-row"><span class="label">Fecha</span><span class="value">' + formatDate(cita.fecha) + '</span></div>' +
+      '<div class="detail-row"><span class="label">Hora</span><span class="value">' + cita.hora + '</span></div>' +
+      '<div class="detail-row"><span class="label">Servicio</span><span class="value">' + cita.servicio + '</span></div>' +
+      '<div class="detail-row"><span class="label">Precio</span><span class="value">' + cita.precio + ' &euro;</span></div>' +
+      '<div class="detail-row"><span class="label">Estado</span><span class="value">' + cita.estado + '</span></div>' +
+    '</div>';
+
+  const actions = $('detailActions');
+  if (cita.estado === 'Confirmada') {
+    actions.innerHTML = '<button class="btn btn-danger btn-block" id="cancelCitaBtn">Solicitar Cancelación</button>';
+    $('cancelCitaBtn').addEventListener('click', handleCancelRequest);
+  } else {
+    actions.innerHTML = '';
+  }
+
+  showView('detail');
+}
+
+async function handleCancelRequest() {
+  const ok = await showConfirm(
+    'Solicitar cancelación',
+    '¿Estás seguro de que quieres solicitar la cancelación de esta cita? El barbero revisará tu solicitud.',
+    'Solicitar cancelación',
+    'btn-danger'
+  );
+  if (!ok) return;
+
+  showLoading();
+  try {
+    const res = await apiPost({
+      action: 'cancelarCita',
+      idCita: selectedCita.id,
+      idCliente: currentCliente.id,
+      idToken: currentIdToken,
+      motivo: ''
+    });
+    hideLoading();
+    if (res.success) {
+      showToast(res.message || 'Solicitud enviada correctamente.', 'success');
+      // Refresh
+      await loadCitas();
+      const updated = currentCitas.find(c => c.id === selectedCita.id);
+      if (updated) openDetail(updated);
+      else showView('dashboard');
+    } else {
+      showToast(res.error || 'Error al enviar la solicitud.', 'error');
+    }
+  } catch (err) {
+    hideLoading();
+    showToast(err.message, 'error');
+  }
+}
+
+$('detailBackBtn').addEventListener('click', () => {
+  renderDashboard();
+  showView('dashboard');
+});
+
+// ====================================
+// ADMIN
+// ====================================
+// Triple-tap on logo
+$('logoSection').addEventListener('click', () => {
+  logoTapCount++;
+  clearTimeout(logoTapTimer);
+  if (logoTapCount >= 3) {
+    logoTapCount = 0;
+    showView('admin');
+    return;
+  }
+  logoTapTimer = setTimeout(() => { logoTapCount = 0; }, 600);
+});
+
+// Hash-based access
+function checkHash() {
+  if (window.location.hash === '#admin') {
+    showView('admin');
+  }
+}
+window.addEventListener('hashchange', checkHash);
+checkHash();
+
+$('adminLoginForm').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const pass = $('adminPassInput').value.trim();
+  $('adminLoginError').textContent = '';
+
+  if (!pass) {
+    $('adminLoginError').textContent = 'Introduce la contraseña.';
+    return;
+  }
+
+  showLoading();
+  try {
+    const res = await apiGet({ action: 'adminLogin', password: pass });
+    hideLoading();
+    if (!res.success) {
+      $('adminLoginError').textContent = res.error || 'Contraseña incorrecta.';
+      return;
+    }
+    adminToken = res.token;
+    $('adminLoginBox').classList.add('hidden');
+    $('adminDashboard').classList.remove('hidden');
+    loadAdminData();
+  } catch (err) {
+    hideLoading();
+    $('adminLoginError').textContent = err.message;
+  }
+});
+
+$('adminBackBtn').addEventListener('click', () => {
+  showView('login');
+});
+
+$('adminLogoutBtn').addEventListener('click', () => {
+  adminToken = null;
+  $('adminPassInput').value = '';
+  $('adminLoginError').textContent = '';
+  $('adminLoginBox').classList.remove('hidden');
+  $('adminDashboard').classList.add('hidden');
+  showView('login');
+});
+
+async function loadAdminData() {
+  showLoading();
+  try {
+    const res = await apiGet({ action: 'getAdmin', token: adminToken });
+    hideLoading();
+    if (!res.success) {
+      showToast(res.error || 'Error al cargar datos.', 'error');
+      return;
+    }
+    renderAdmin(res.data);
+  } catch (err) {
+    hideLoading();
+    showToast(err.message, 'error');
+  }
+}
+
+function renderAdmin(data) {
+  // Stats
+  $('adminStats').innerHTML =
+    '<div class="stat-card"><div class="stat-number">' + data.stats.totalClientes + '</div><div class="stat-label">Clientes</div></div>' +
+    '<div class="stat-card"><div class="stat-number">' + data.stats.citasHoy + '</div><div class="stat-label">Citas hoy</div></div>' +
+    '<div class="stat-card"><div class="stat-number">' + data.stats.solicitudesPendientes + '</div><div class="stat-label">Pendientes</div></div>';
+
+  // Today's appointments
+  const tbody = $('adminTodayBody');
+  if (data.citasHoy.length === 0) {
+    tbody.innerHTML = '<tr><td colspan="4" style="text-align:center;color:#777;padding:20px;">No hay citas para hoy</td></tr>';
+  } else {
+    const sortedHoy = [...data.citasHoy].sort((a, b) => a.hora.localeCompare(b.hora));
+    tbody.innerHTML = sortedHoy.map(c =>
+      '<tr>' +
+        '<td>' + c.hora + '</td>' +
+        '<td>' + c.clienteNombre + '</td>' +
+        '<td>' + c.servicio + '</td>' +
+        '<td>' + badgeHTML(c.estado) + '</td>' +
+      '</tr>'
+    ).join('');
+  }
+
+  // Requests
+  const reqBody = $('adminRequestsBody');
+  const noMsg = $('noRequestsMsg');
+  if (data.solicitudes.length === 0) {
+    $('adminRequestsTable').classList.add('hidden');
+    noMsg.classList.remove('hidden');
+  } else {
+    $('adminRequestsTable').classList.remove('hidden');
+    noMsg.classList.add('hidden');
+    reqBody.innerHTML = data.solicitudes.map(s =>
+      '<tr>' +
+        '<td>' + s.clienteNombre + '</td>' +
+        '<td>' + s.servicio + '</td>' +
+        '<td>' + formatDateShort(s.fecha) + '</td>' +
+        '<td><div class="request-actions">' +
+          '<button class="btn btn-success" data-sol-id="' + s.id + '" data-action="aprobar">Aprobar</button>' +
+          '<button class="btn btn-danger" data-sol-id="' + s.id + '" data-action="rechazar">Rechazar</button>' +
+        '</div></td>' +
+      '</tr>'
+    ).join('');
+
+    reqBody.querySelectorAll('button[data-sol-id]').forEach(btn => {
+      btn.addEventListener('click', async () => {
+        const solId = btn.dataset.solId;
+        const action = btn.dataset.action;
+        const estado = action === 'aprobar' ? 'aprobada' : 'rechazada';
+
+        const ok = await showConfirm(
+          action === 'aprobar' ? 'Aprobar cancelación' : 'Rechazar cancelación',
+          action === 'aprobar'
+            ? '¿Confirmas que quieres aprobar esta cancelación?'
+            : '¿Confirmas que quieres rechazar esta cancelación? La cita se mantendrá.',
+          action === 'aprobar' ? 'Aprobar' : 'Rechazar',
+          action === 'aprobar' ? 'btn-success' : 'btn-danger'
+        );
+        if (!ok) return;
+
+        showLoading();
+        try {
+          const res = await apiPost({ action: 'procesarSolicitud', idSolicitud: solId, estado, token: adminToken });
+          hideLoading();
+          if (res.success) {
+            showToast(res.message, 'success');
+            loadAdminData();
+          } else {
+            showToast(res.error || 'Error al procesar.', 'error');
+          }
+        } catch (err) {
+          hideLoading();
+          showToast(err.message, 'error');
+        }
+      });
+    });
+  }
+}
+
+// ====================================
+// INITIALIZATION
+// ====================================
+// Initialize Google Sign-In when ready
+if (document.readyState === 'complete') {
+  initGoogleSignIn();
+  checkStoredSession();
+} else {
+  window.addEventListener('load', () => {
+    initGoogleSignIn();
+    checkStoredSession();
+  });
+}
+
+// Register Service Worker for PWA
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('sw.js').catch(() => {});
+}
+</script>
+</body>
+</html>
