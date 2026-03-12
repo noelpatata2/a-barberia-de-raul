@@ -1283,7 +1283,7 @@ async function loadAdminData() {
       showToast(res.error || 'Error al cargar datos.', 'error');
       return;
     }
-    renderAdmin(res.data);
+    renderAdmin(res.data || res.dashboard);
   } catch (err) {
     hideLoading();
     showToast(err.message, 'error');
@@ -1291,45 +1291,51 @@ async function loadAdminData() {
 }
 
 function renderAdmin(data) {
-  // Stats
+  // Stats - handle both backend formats (data.stats or data.estadisticas)
+  const stats = data.stats || data.estadisticas || {};
+  const totalClientes = stats.totalClientes || stats.totalCitasHoy || 0;
+  const citasHoyCount = stats.citasHoy || stats.citasActivas || 0;
+  const pendientesCount = stats.solicitudesPendientes || 0;
   $('adminStats').innerHTML =
-    '<div class="stat-card"><div class="stat-number">' + data.stats.totalClientes + '</div><div class="stat-label">Clientes</div></div>' +
-    '<div class="stat-card"><div class="stat-number">' + data.stats.citasHoy + '</div><div class="stat-label">Citas hoy</div></div>' +
-    '<div class="stat-card"><div class="stat-number">' + data.stats.solicitudesPendientes + '</div><div class="stat-label">Pendientes</div></div>';
+    '<div class="stat-card"><div class="stat-number">' + (data.citasHoy || []).length + '</div><div class="stat-label">Citas hoy</div></div>' +
+    '<div class="stat-card"><div class="stat-number">' + citasHoyCount + '</div><div class="stat-label">Activas</div></div>' +
+    '<div class="stat-card"><div class="stat-number">' + pendientesCount + '</div><div class="stat-label">Pendientes</div></div>';
 
   // Today's appointments
+  const citasHoy = data.citasHoy || [];
   const tbody = $('adminTodayBody');
-  if (data.citasHoy.length === 0) {
+  if (citasHoy.length === 0) {
     tbody.innerHTML = '<tr><td colspan="4" style="text-align:center;color:#777;padding:20px;">No hay citas para hoy</td></tr>';
   } else {
-    const sortedHoy = [...data.citasHoy].sort((a, b) => a.hora.localeCompare(b.hora));
+    const sortedHoy = [...citasHoy].sort((a, b) => (a.horaInicio || a.hora || '').localeCompare(b.horaInicio || b.hora || ''));
     tbody.innerHTML = sortedHoy.map(c =>
       '<tr>' +
-        '<td>' + c.hora + '</td>' +
-        '<td>' + c.clienteNombre + '</td>' +
-        '<td>' + c.servicio + '</td>' +
+        '<td>' + (c.horaInicio || c.hora || '') + '</td>' +
+        '<td>' + (c.cliente || c.clienteNombre || '') + '</td>' +
+        '<td>' + (c.servicio || '') + '</td>' +
         '<td>' + badgeHTML(c.estado) + '</td>' +
       '</tr>'
     ).join('');
   }
 
   // Requests
+  const solicitudes = data.solicitudesPendientes || data.solicitudes || [];
   const reqBody = $('adminRequestsBody');
   const noMsg = $('noRequestsMsg');
-  if (data.solicitudes.length === 0) {
+  if (solicitudes.length === 0) {
     $('adminRequestsTable').classList.add('hidden');
     noMsg.classList.remove('hidden');
   } else {
     $('adminRequestsTable').classList.remove('hidden');
     noMsg.classList.add('hidden');
-    reqBody.innerHTML = data.solicitudes.map(s =>
+    reqBody.innerHTML = solicitudes.map(s =>
       '<tr>' +
-        '<td>' + s.clienteNombre + '</td>' +
-        '<td>' + s.servicio + '</td>' +
-        '<td>' + formatDateShort(s.fecha) + '</td>' +
+        '<td>' + (s.cliente || s.clienteNombre || '') + '</td>' +
+        '<td>' + (s.servicio || '') + '</td>' +
+        '<td>' + formatDateShort(s.fechaCita || s.fecha || '') + '</td>' +
         '<td><div class="request-actions">' +
-          '<button class="btn btn-success" data-sol-id="' + s.id + '" data-action="aprobar">Aprobar</button>' +
-          '<button class="btn btn-danger" data-sol-id="' + s.id + '" data-action="rechazar">Rechazar</button>' +
+          '<button class="btn btn-success" data-sol-id="' + (s.idSolicitud || s.id) + '" data-action="aprobar">Aprobar</button>' +
+          '<button class="btn btn-danger" data-sol-id="' + (s.idSolicitud || s.id) + '" data-action="rechazar">Rechazar</button>' +
         '</div></td>' +
       '</tr>'
     ).join('');
