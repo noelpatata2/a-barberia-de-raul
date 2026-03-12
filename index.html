@@ -1355,7 +1355,7 @@ function renderAdmin(data) {
       btn.addEventListener('click', async () => {
         const solId = btn.dataset.solId;
         const action = btn.dataset.action;
-        const estado = action === 'aprobar' ? 'aprobada' : 'rechazada';
+        const estado = action === 'aprobar' ? 'Aprobada' : 'Rechazada';
 
         const ok = await showConfirm(
           action === 'aprobar' ? 'Aprobar cancelación' : 'Rechazar cancelación',
@@ -1372,7 +1372,7 @@ function renderAdmin(data) {
           const res = await apiPost({ action: 'procesarSolicitud', idSolicitud: solId, estado, token: adminToken });
           hideLoading();
           if (res.success) {
-            showToast(res.message, 'success');
+            showToast(res.mensaje || res.message, 'success');
             loadAdminData();
           } else {
             showToast(res.error || 'Error al procesar.', 'error');
