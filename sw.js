@@ -1,9 +1,9 @@
-const CACHE_NAME = 'barberia-raul-v1';
+const CACHE_NAME = 'barberia-raul-v2';
 const ASSETS_TO_CACHE = [
-  '/index.html',
-  '/manifest.json',
-  '/icons/icon-192.png',
-  '/icons/icon-512.png'
+  './index.html',
+  './manifest.json',
+  './icons/icon-192.png',
+  './icons/icon-512.png'
 ];
 
 // Install: cache essential assets
