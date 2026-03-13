@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">A Barbería de Raúl</string>
+    <string name="loading">Cargando…</string>
+    <string name="no_connection">Sin conexión a internet</string>
+    <string name="notification_reminder_title">Recordatorio de cita</string>
+    <string name="notification_reminder_body">Tu cita de %1$s es mañana a las %2$s</string>
+    <string name="notification_status_approved">Tu solicitud de cancelación ha sido aprobada</string>
+    <string name="notification_status_rejected">Tu solicitud de cancelación ha sido rechazada. La cita se mantiene.</string>
+</resources>
