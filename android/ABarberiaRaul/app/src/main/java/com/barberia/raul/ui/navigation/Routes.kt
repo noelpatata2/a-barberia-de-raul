@@ -6,5 +6,4 @@ sealed class Routes(val route: String) {
     data object Detail : Routes("detail/{citaId}") {
         fun create(citaId: String) = "detail/$citaId"
     }
-    data object Admin : Routes("admin")
 }

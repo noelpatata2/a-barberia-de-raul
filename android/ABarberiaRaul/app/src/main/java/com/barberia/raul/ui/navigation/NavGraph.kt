@@ -1,13 +1,11 @@
 package com.barberia.raul.ui.navigation
 
-import androidx.compose.animation.*
 import androidx.compose.runtime.Composable
 import androidx.navigation.NavHostController
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.navArgument
-import com.barberia.raul.ui.screens.admin.AdminScreen
 import com.barberia.raul.ui.screens.dashboard.DashboardScreen
 import com.barberia.raul.ui.screens.detail.DetailScreen
 import com.barberia.raul.ui.screens.login.LoginScreen
@@ -27,9 +25,6 @@ fun BarberiaNavGraph(
                     navController.navigate(Routes.Dashboard.route) {
                         popUpTo(Routes.Login.route) { inclusive = true }
                     }
-                },
-                onNavigateToAdmin = {
-                    navController.navigate(Routes.Admin.route)
                 }
             )
         }
@@ -43,9 +38,6 @@ fun BarberiaNavGraph(
                     navController.navigate(Routes.Login.route) {
                         popUpTo(0) { inclusive = true }
                     }
-                },
-                onNavigateToAdmin = {
-                    navController.navigate(Routes.Admin.route)
                 }
             )
         }
@@ -57,12 +49,6 @@ fun BarberiaNavGraph(
             val citaId = backStackEntry.arguments?.getString("citaId") ?: ""
             DetailScreen(
                 citaId = citaId,
-                onBack = { navController.popBackStack() }
-            )
-        }
-
-        composable(Routes.Admin.route) {
-            AdminScreen(
                 onBack = { navController.popBackStack() }
             )
         }

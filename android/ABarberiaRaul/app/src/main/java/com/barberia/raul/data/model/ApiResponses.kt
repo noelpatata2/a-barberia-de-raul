@@ -23,33 +23,3 @@ data class SimpleResponse(
     val mensaje: String? = null,
     val error: String? = null
 )
-
-@Serializable
-data class AdminLoginResponse(
-    val success: Boolean,
-    val token: String? = null,
-    val error: String? = null
-)
-
-@Serializable
-data class Estadisticas(
-    val totalCitasHoy: Int = 0,
-    val citasActivas: Int = 0,
-    val citasCanceladas: Int = 0,
-    val solicitudesPendientes: Int = 0
-)
-
-@Serializable
-data class AdminDashboard(
-    val fecha: String = "",
-    val citasHoy: List<Cita> = emptyList(),
-    val solicitudesPendientes: List<Solicitud> = emptyList(),
-    val estadisticas: Estadisticas = Estadisticas()
-)
-
-@Serializable
-data class AdminResponse(
-    val success: Boolean,
-    val dashboard: AdminDashboard? = null,
-    val error: String? = null
-)

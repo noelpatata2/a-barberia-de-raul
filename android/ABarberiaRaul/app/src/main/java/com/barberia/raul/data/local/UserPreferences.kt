@@ -18,7 +18,6 @@ class UserPreferences(private val context: Context) {
         private val KEY_CLIENTE_EMAIL = stringPreferencesKey("cliente_email")
         private val KEY_CLIENTE_FOTO = stringPreferencesKey("cliente_foto")
         private val KEY_CACHED_CITAS = stringPreferencesKey("cached_citas")
-        private val KEY_ADMIN_TOKEN = stringPreferencesKey("admin_token")
     }
 
     val isLoggedIn: Flow<Boolean> = context.dataStore.data.map { prefs ->
@@ -54,14 +53,4 @@ class UserPreferences(private val context: Context) {
     }
 
     val cachedCitas: Flow<String?> = context.dataStore.data.map { it[KEY_CACHED_CITAS] }
-
-    suspend fun saveAdminToken(token: String) {
-        context.dataStore.edit { it[KEY_ADMIN_TOKEN] = token }
-    }
-
-    suspend fun clearAdminToken() {
-        context.dataStore.edit { it.remove(KEY_ADMIN_TOKEN) }
-    }
-
-    val adminToken: Flow<String?> = context.dataStore.data.map { it[KEY_ADMIN_TOKEN] }
 }
