@@ -1055,7 +1055,7 @@ function badgeHTML(estado) {
   let cls = 'badge-pendiente';
   if (estado === 'Confirmada') cls = 'badge-confirmada';
   else if (estado === 'Cancelada') cls = 'badge-cancelada';
-  else if (estado.includes('solicitada') || estado.includes('Solicitada')) cls = 'badge-solicitada';
+  else if (estado === 'Cancelación Pendiente') cls = 'badge-pendiente';
   return '<span class="badge ' + cls + '">' + estado + '</span>';
 }
 
