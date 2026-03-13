@@ -729,24 +729,24 @@ const GOOGLE_CLIENT_ID = '253527395479-lfd1qfkto0f2lrku336hn6ics468olbr.apps.goo
 // ====================================
 const MOCK_DATA = {
   clientes: [
-    { id: 'c1', nombre: 'Carlos García', telefono: '612345678', email: 'carlos@gmail.com' },
-    { id: 'c2', nombre: 'Miguel Fernández', telefono: '623456789', email: 'miguel@gmail.com' },
-    { id: 'c3', nombre: 'Alejandro López', telefono: '634567890', email: 'alejandro@gmail.com' },
-    { id: 'c4', nombre: 'David Rodríguez', telefono: '645678901', email: 'david@gmail.com' }
+    { id: 'c1', nombre: 'Carlos García', telefono: '+34 612 345 678', email: 'carlos@gmail.com' },
+    { id: 'c2', nombre: 'Miguel Fernández', telefono: '+34 623 456 789', email: 'miguel@gmail.com' },
+    { id: 'c3', nombre: 'Alejandro López', telefono: '+34 634 567 890', email: 'alejandro@gmail.com' },
+    { id: 'c4', nombre: 'David Rodríguez', telefono: '+34 645 678 901', email: 'david@gmail.com' }
   ],
   citas: [
-    { id: 'a1', clienteId: 'c1', servicio: 'Corte de pelo', fecha: '2026-03-13', hora: '10:00', precio: 15, estado: 'Confirmada' },
-    { id: 'a2', clienteId: 'c1', servicio: 'Barba', fecha: '2026-03-18', hora: '11:30', precio: 10, estado: 'Pendiente' },
-    { id: 'a3', clienteId: 'c2', servicio: 'Corte + Barba', fecha: '2026-03-12', hora: '09:30', precio: 22, estado: 'Confirmada' },
-    { id: 'a4', clienteId: 'c2', servicio: 'Corte de pelo', fecha: '2026-03-15', hora: '16:00', precio: 15, estado: 'Confirmada' },
-    { id: 'a5', clienteId: 'c3', servicio: 'Afeitado clásico', fecha: '2026-03-12', hora: '12:00', precio: 12, estado: 'Confirmada' },
-    { id: 'a6', clienteId: 'c3', servicio: 'Corte de pelo', fecha: '2026-03-20', hora: '10:30', precio: 15, estado: 'Cancelada' },
-    { id: 'a7', clienteId: 'c4', servicio: 'Corte + Barba', fecha: '2026-03-12', hora: '17:00', precio: 22, estado: 'Confirmada' },
-    { id: 'a8', clienteId: 'c4', servicio: 'Tinte', fecha: '2026-03-25', hora: '11:00', precio: 30, estado: 'Pendiente' },
-    { id: 'a9', clienteId: 'c1', servicio: 'Corte + Barba', fecha: '2026-03-12', hora: '14:00', precio: 22, estado: 'Confirmada' }
+    { idCita: 'a1', clienteId: 'c1', servicio: 'Corte de pelo', fecha: '2026-03-14', horaInicio: '10:00', horaFin: '10:30', estado: 'Confirmada' },
+    { idCita: 'a2', clienteId: 'c1', servicio: 'Arreglo de barba', fecha: '2026-03-18', horaInicio: '11:30', horaFin: '11:50', estado: 'Confirmada' },
+    { idCita: 'a3', clienteId: 'c2', servicio: 'Corte de pelo', fecha: '2026-03-14', horaInicio: '09:30', horaFin: '10:00', estado: 'Confirmada' },
+    { idCita: 'a4', clienteId: 'c2', servicio: 'Corte de pelo', fecha: '2026-03-15', horaInicio: '16:00', horaFin: '16:30', estado: 'Confirmada' },
+    { idCita: 'a5', clienteId: 'c3', servicio: 'Afeitado', fecha: '2026-03-14', horaInicio: '12:00', horaFin: '12:25', estado: 'Confirmada' },
+    { idCita: 'a6', clienteId: 'c3', servicio: 'Corte de pelo', fecha: '2026-03-20', horaInicio: '10:30', horaFin: '11:00', estado: 'Cancelada' },
+    { idCita: 'a7', clienteId: 'c4', servicio: 'Corte de pelo', fecha: '2026-03-14', horaInicio: '17:00', horaFin: '17:30', estado: 'Confirmada' },
+    { idCita: 'a8', clienteId: 'c4', servicio: 'Tinte', fecha: '2026-03-25', horaInicio: '11:00', horaFin: '12:00', estado: 'Confirmada' },
+    { idCita: 'a9', clienteId: 'c1', servicio: 'Perfilado', fecha: '2026-03-28', horaInicio: '14:00', horaFin: '14:15', estado: 'Confirmada' }
   ],
   solicitudes: [
-    { id: 's1', citaId: 'a3', clienteId: 'c2', clienteNombre: 'Miguel Fernández', servicio: 'Corte + Barba', fecha: '2026-03-12', motivo: 'No puedo asistir' }
+    { idSolicitud: 's1', idCita: 'a3', idCliente: 'c2', cliente: 'Miguel Fernández', servicio: 'Corte de pelo', fechaCita: '2026-03-14', motivo: 'No puedo asistir' }
   ]
 };
 
@@ -802,10 +802,14 @@ function showToast(msg, type = 'info') {
   setTimeout(() => t.classList.remove('show'), 3000);
 }
 
-function showConfirm(title, msg, okText, okClass) {
+function showConfirm(title, msg, okText, okClass, useHTML) {
   return new Promise(resolve => {
     $('confirmTitle').textContent = title;
-    $('confirmMsg').textContent = msg;
+    if (useHTML) {
+      $('confirmMsg').innerHTML = msg;
+    } else {
+      $('confirmMsg').textContent = msg;
+    }
     const okBtn = $('confirmOk');
     okBtn.textContent = okText || 'Confirmar';
     okBtn.className = 'btn ' + (okClass || 'btn-danger');
@@ -942,11 +946,6 @@ async function mockApiGet(params) {
   await mockDelay();
   const action = params.action;
 
-  if (action === 'getCitas') {
-    const citas = MOCK_DATA.citas.filter(c => c.clienteId === params.clienteId);
-    return { success: true, citas };
-  }
-
   if (action === 'adminLogin') {
     if (params.password === 'raul2024') {
       return { success: true, token: 'mock-admin-token-xyz' };
@@ -956,19 +955,20 @@ async function mockApiGet(params) {
 
   if (action === 'getAdmin') {
     const hoy = new Date().toISOString().split('T')[0];
-    const citasHoy = MOCK_DATA.citas.filter(c => c.fecha === '2026-03-12');
-    const totalClientes = MOCK_DATA.clientes.length;
+    const citasHoy = MOCK_DATA.citas.filter(c => c.fecha === hoy);
     return {
       success: true,
-      data: {
+      dashboard: {
+        fecha: hoy,
         citasHoy: citasHoy.map(c => {
           const cl = MOCK_DATA.clientes.find(x => x.id === c.clienteId);
-          return { ...c, clienteNombre: cl ? cl.nombre : 'Desconocido' };
+          return { idCita: c.idCita, cliente: cl ? cl.nombre : 'Desconocido', servicio: c.servicio, horaInicio: c.horaInicio, horaFin: c.horaFin, estado: c.estado };
         }),
-        solicitudes: MOCK_DATA.solicitudes,
-        stats: {
-          totalClientes,
-          citasHoy: citasHoy.length,
+        solicitudesPendientes: MOCK_DATA.solicitudes,
+        estadisticas: {
+          totalCitasHoy: citasHoy.length,
+          citasActivas: citasHoy.filter(c => c.estado === 'Confirmada').length,
+          citasCanceladas: citasHoy.filter(c => c.estado === 'Cancelada').length,
           solicitudesPendientes: MOCK_DATA.solicitudes.length
         }
       }
@@ -996,36 +996,39 @@ async function mockApiPost(body) {
     return { success: true, cliente };
   }
 
+  if (body.action === 'getCitas') {
+    const citas = MOCK_DATA.citas.filter(c => c.clienteId === 'c1' && c.estado !== 'Cancelada');
+    return { success: true, citas, total: citas.length };
+  }
+
   if (body.action === 'cancelarCita') {
-    const cita = MOCK_DATA.citas.find(c => c.id === body.idCita);
+    const cita = MOCK_DATA.citas.find(c => c.idCita === body.idCita);
     if (!cita) return { success: false, error: 'Cita no encontrada.' };
-    cita.estado = 'Cancelación solicitada';
-    const cl = MOCK_DATA.clientes.find(c => c.id === body.idCliente);
+    cita.estado = 'Cancelación Pendiente';
     MOCK_DATA.solicitudes.push({
-      id: 's' + Date.now(),
-      citaId: body.idCita,
-      clienteId: body.idCliente,
-      clienteNombre: cl ? cl.nombre : 'Desconocido',
+      idSolicitud: 's' + Date.now(),
+      idCita: body.idCita,
+      cliente: 'Carlos García',
       servicio: cita.servicio,
-      fecha: cita.fecha,
+      fechaCita: cita.fecha,
       motivo: body.motivo || ''
     });
-    return { success: true, message: 'Solicitud de cancelación enviada correctamente.' };
+    return { success: true, mensaje: 'Solicitud de cancelación enviada correctamente.' };
   }
 
   if (body.action === 'procesarSolicitud') {
-    const idx = MOCK_DATA.solicitudes.findIndex(s => s.id === body.idSolicitud);
+    const idx = MOCK_DATA.solicitudes.findIndex(s => s.idSolicitud === body.idSolicitud);
     if (idx === -1) return { success: false, error: 'Solicitud no encontrada.' };
     const sol = MOCK_DATA.solicitudes[idx];
-    const cita = MOCK_DATA.citas.find(c => c.id === sol.citaId);
-    if (body.estado === 'aprobada') {
+    const cita = MOCK_DATA.citas.find(c => c.idCita === sol.idCita);
+    if (body.estado === 'Aprobada') {
       if (cita) cita.estado = 'Cancelada';
       MOCK_DATA.solicitudes.splice(idx, 1);
-      return { success: true, message: 'Cancelación aprobada.' };
+      return { success: true, mensaje: 'Cancelación aprobada.' };
     } else {
       if (cita) cita.estado = 'Confirmada';
       MOCK_DATA.solicitudes.splice(idx, 1);
-      return { success: true, message: 'Cancelación rechazada. La cita se mantiene.' };
+      return { success: true, mensaje: 'Cancelación rechazada. La cita se mantiene.' };
     }
   }
 
@@ -1056,27 +1059,15 @@ function badgeHTML(estado) {
   return '<span class="badge ' + cls + '">' + estado + '</span>';
 }
 
-function formatTime(t) {
-  if (!t) return '';
-  if (typeof t === 'string' && t.includes('T')) {
-    // ISO date like 1899-12-30T10:00:00.000Z
-    const d = new Date(t);
-    return d.getUTCHours().toString().padStart(2,'0') + ':' + d.getUTCMinutes().toString().padStart(2,'0');
-  }
-  return t;
-}
-
 function citaCardHTML(cita) {
-  const id = cita.idCita || cita.id;
-  const hora = formatTime(cita.horaInicio || cita.hora);
-  return '<div class="card clickable" data-cita-id="' + id + '">' +
+  return '<div class="card clickable" data-cita-id="' + cita.idCita + '">' +
     '<div class="cita-card-header">' +
       '<span class="cita-card-service">' + cita.servicio + '</span>' +
       badgeHTML(cita.estado) +
     '</div>' +
     '<div class="cita-card-details">' +
       '<span class="cita-card-detail">&#128197; <span>' + formatDate(cita.fecha) + '</span></span>' +
-      '<span class="cita-card-detail">&#128336; <span>' + hora + '</span></span>' +
+      '<span class="cita-card-detail">&#128336; <span>' + cita.horaInicio + '</span></span>' +
     '</div>' +
   '</div>';
 }
@@ -1085,9 +1076,15 @@ function citaCardHTML(cita) {
 // DASHBOARD
 // ====================================
 async function loadCitas() {
-  const res = await apiPost({ action: 'getCitas', idToken: currentIdToken });
-  if (res.success) {
-    currentCitas = res.citas;
+  try {
+    const res = await apiPost({ action: 'getCitas', idToken: currentIdToken });
+    if (res.success) {
+      currentCitas = res.citas || [];
+    } else {
+      showToast(res.error || 'Error al cargar las citas.', 'error');
+    }
+  } catch (err) {
+    showToast('No se pudieron cargar las citas.', 'error');
   }
 }
 
@@ -1096,8 +1093,8 @@ function renderDashboard() {
 
   // Sort by date+time
   const sorted = [...currentCitas].sort((a, b) => {
-    const da = a.fecha + formatTime(a.horaInicio || a.hora);
-    const db = b.fecha + formatTime(b.horaInicio || b.hora);
+    const da = a.fecha + (a.horaInicio || '');
+    const db = b.fecha + (b.horaInicio || '');
     return da.localeCompare(db);
   });
 
@@ -1124,7 +1121,7 @@ function renderDashboard() {
   // Attach click events
   document.querySelectorAll('.card.clickable[data-cita-id]').forEach(card => {
     card.addEventListener('click', () => {
-      const cita = currentCitas.find(c => (c.idCita || c.id) === card.dataset.citaId);
+      const cita = currentCitas.find(c => c.idCita === card.dataset.citaId);
       if (cita) openDetail(cita);
     });
   });
@@ -1164,9 +1161,8 @@ function openDetail(cita) {
     '<div style="margin-bottom:16px;">' + badgeHTML(cita.estado) + '</div>' +
     '<div class="detail-rows">' +
       '<div class="detail-row"><span class="label">Fecha</span><span class="value">' + formatDate(cita.fecha) + '</span></div>' +
-      '<div class="detail-row"><span class="label">Hora</span><span class="value">' + formatTime(cita.horaInicio || cita.hora) + '</span></div>' +
+      '<div class="detail-row"><span class="label">Hora</span><span class="value">' + (cita.horaInicio || '') + ' - ' + (cita.horaFin || '') + '</span></div>' +
       '<div class="detail-row"><span class="label">Servicio</span><span class="value">' + cita.servicio + '</span></div>' +
-      (cita.precio ? '<div class="detail-row"><span class="label">Precio</span><span class="value">' + cita.precio + ' &euro;</span></div>' : '') +
       '<div class="detail-row"><span class="label">Estado</span><span class="value">' + cita.estado + '</span></div>' +
     '</div>';
 
@@ -1184,23 +1180,26 @@ function openDetail(cita) {
 async function handleCancelRequest() {
   const ok = await showConfirm(
     'Solicitar cancelación',
-    '¿Estás seguro de que quieres solicitar la cancelación de esta cita? El barbero revisará tu solicitud.',
+    '¿Estás seguro de que quieres cancelar esta cita?<br><br><textarea id="motivoInput" placeholder="Motivo de la cancelación (opcional)" style="width:100%;min-height:60px;padding:10px;border-radius:6px;border:1px solid var(--gris);background:var(--gris-oscuro);color:var(--blanco);font-family:inherit;resize:vertical;font-size:0.95rem;"></textarea>',
     'Solicitar cancelación',
-    'btn-danger'
+    'btn-danger',
+    true
   );
   if (!ok) return;
+
+  const motivo = document.getElementById('motivoInput') ? document.getElementById('motivoInput').value.trim() : '';
 
   showLoading();
   try {
     const res = await apiPost({
       action: 'cancelarCita',
-      idCita: selectedCita.idCita || selectedCita.id,
+      idCita: selectedCita.idCita,
       idToken: currentIdToken,
-      motivo: ''
+      motivo: motivo
     });
     hideLoading();
     if (res.success) {
-      showToast(res.message || 'Solicitud enviada correctamente.', 'success');
+      showToast(res.mensaje || 'Solicitud enviada correctamente.', 'success');
       // Refresh
       await loadCitas();
       const updated = currentCitas.find(c => c.id === selectedCita.id);
@@ -1294,7 +1293,7 @@ async function loadAdminData() {
       showToast(res.error || 'Error al cargar datos.', 'error');
       return;
     }
-    renderAdmin(res.data || res.dashboard);
+    renderAdmin(res.dashboard);
   } catch (err) {
     hideLoading();
     showToast(err.message, 'error');
@@ -1302,15 +1301,11 @@ async function loadAdminData() {
 }
 
 function renderAdmin(data) {
-  // Stats - handle both backend formats (data.stats or data.estadisticas)
-  const stats = data.stats || data.estadisticas || {};
-  const totalClientes = stats.totalClientes || stats.totalCitasHoy || 0;
-  const citasHoyCount = stats.citasHoy || stats.citasActivas || 0;
-  const pendientesCount = stats.solicitudesPendientes || 0;
+  const stats = data.estadisticas || {};
   $('adminStats').innerHTML =
-    '<div class="stat-card"><div class="stat-number">' + (data.citasHoy || []).length + '</div><div class="stat-label">Citas hoy</div></div>' +
-    '<div class="stat-card"><div class="stat-number">' + citasHoyCount + '</div><div class="stat-label">Activas</div></div>' +
-    '<div class="stat-card"><div class="stat-number">' + pendientesCount + '</div><div class="stat-label">Pendientes</div></div>';
+    '<div class="stat-card"><div class="stat-number">' + (stats.totalCitasHoy || 0) + '</div><div class="stat-label">Citas hoy</div></div>' +
+    '<div class="stat-card"><div class="stat-number">' + (stats.citasActivas || 0) + '</div><div class="stat-label">Activas</div></div>' +
+    '<div class="stat-card"><div class="stat-number">' + (stats.solicitudesPendientes || 0) + '</div><div class="stat-label">Pendientes</div></div>';
 
   // Today's appointments
   const citasHoy = data.citasHoy || [];
@@ -1318,11 +1313,11 @@ function renderAdmin(data) {
   if (citasHoy.length === 0) {
     tbody.innerHTML = '<tr><td colspan="4" style="text-align:center;color:#777;padding:20px;">No hay citas para hoy</td></tr>';
   } else {
-    const sortedHoy = [...citasHoy].sort((a, b) => (a.horaInicio || a.hora || '').localeCompare(b.horaInicio || b.hora || ''));
+    const sortedHoy = [...citasHoy].sort((a, b) => (a.horaInicio || '').localeCompare(b.horaInicio || ''));
     tbody.innerHTML = sortedHoy.map(c =>
       '<tr>' +
-        '<td>' + formatTime(c.horaInicio || c.hora || '') + '</td>' +
-        '<td>' + (c.cliente || c.clienteNombre || '') + '</td>' +
+        '<td>' + (c.horaInicio || '') + '</td>' +
+        '<td>' + (c.cliente || '') + '</td>' +
         '<td>' + (c.servicio || '') + '</td>' +
         '<td>' + badgeHTML(c.estado) + '</td>' +
       '</tr>'
@@ -1330,7 +1325,7 @@ function renderAdmin(data) {
   }
 
   // Requests
-  const solicitudes = data.solicitudesPendientes || data.solicitudes || [];
+  const solicitudes = data.solicitudesPendientes || [];
   const reqBody = $('adminRequestsBody');
   const noMsg = $('noRequestsMsg');
   if (solicitudes.length === 0) {
@@ -1341,12 +1336,12 @@ function renderAdmin(data) {
     noMsg.classList.add('hidden');
     reqBody.innerHTML = solicitudes.map(s =>
       '<tr>' +
-        '<td>' + (s.cliente || s.clienteNombre || '') + '</td>' +
+        '<td>' + (s.cliente || '') + '</td>' +
         '<td>' + (s.servicio || '') + '</td>' +
-        '<td>' + formatDateShort(s.fechaCita || s.fecha || '') + '</td>' +
+        '<td>' + formatDateShort(s.fechaCita || '') + '</td>' +
         '<td><div class="request-actions">' +
-          '<button class="btn btn-success" data-sol-id="' + (s.idSolicitud || s.id) + '" data-action="aprobar">Aprobar</button>' +
-          '<button class="btn btn-danger" data-sol-id="' + (s.idSolicitud || s.id) + '" data-action="rechazar">Rechazar</button>' +
+          '<button class="btn btn-success" data-sol-id="' + s.idSolicitud + '" data-action="aprobar">Aprobar</button>' +
+          '<button class="btn btn-danger" data-sol-id="' + s.idSolicitud + '" data-action="rechazar">Rechazar</button>' +
         '</div></td>' +
       '</tr>'
     ).join('');
@@ -1372,7 +1367,7 @@ function renderAdmin(data) {
           const res = await apiPost({ action: 'procesarSolicitud', idSolicitud: solId, estado, token: adminToken });
           hideLoading();
           if (res.success) {
-            showToast(res.mensaje || res.message, 'success');
+            showToast(res.mensaje || 'Procesado correctamente.', 'success');
             loadAdminData();
           } else {
             showToast(res.error || 'Error al procesar.', 'error');
