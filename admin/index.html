@@ -1,0 +1,1557 @@
+<!DOCTYPE html>
+<html lang="gl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Panel de Xestion - Peluqueria de Raul</title>
+  <style>
+    /* ============================================================
+       Variables e estilos globais
+       ============================================================ */
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    :root {
+      --cor-fondo: #F5F0E8;
+      --cor-tarxeta: #FFFFFF;
+      --cor-primaria: #8B6914;
+      --cor-ouro-claro: #C8A84E;
+      --cor-texto: #1A1A1A;
+      --cor-texto-gris: #888888;
+      --cor-borde: #E8E0D0;
+      --cor-exito: #3D8B37;
+      --cor-erro: #C0392B;
+      --cor-aviso: #E8A317;
+      --radio-borde: 12px;
+      --sombra-tarxeta: 0 2px 8px rgba(0, 0, 0, 0.06);
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+      background-color: var(--cor-fondo);
+      color: var(--cor-texto);
+      min-height: 100vh;
+      line-height: 1.5;
+    }
+
+    /* ============================================================
+       Cabeceira
+       ============================================================ */
+    .cabeceira {
+      background: linear-gradient(135deg, #8B6914, #C8A84E);
+      padding: 20px 24px;
+    }
+
+    .cabeceira h1 {
+      font-size: 1.5rem;
+      font-weight: 700;
+      color: #FFFFFF;
+      margin-bottom: 2px;
+    }
+
+    .cabeceira p {
+      font-size: 0.85rem;
+      color: rgba(255, 255, 255, 0.8);
+    }
+
+    .punto-estado {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background-color: var(--cor-texto-gris);
+      transition: background-color 0.3s;
+    }
+
+    .punto-estado.conectado {
+      background-color: var(--cor-exito);
+    }
+
+    .punto-estado.erro {
+      background-color: var(--cor-erro);
+    }
+
+    .punto-estado.cargando {
+      background-color: var(--cor-aviso);
+      animation: parpadeo 1s ease-in-out infinite;
+    }
+
+    @keyframes parpadeo {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.3; }
+    }
+
+    /* ============================================================
+       Navegacion por pestanas
+       ============================================================ */
+    .navegacion-pestanas {
+      display: flex;
+      background-color: #FFFFFF;
+      border-bottom: 1px solid var(--cor-borde);
+      overflow-x: auto;
+    }
+
+    .boton-pestana {
+      flex: 1;
+      min-width: 120px;
+      padding: 14px 20px;
+      background: none;
+      border: none;
+      color: var(--cor-texto-gris);
+      font-size: 0.9rem;
+      font-weight: 500;
+      cursor: pointer;
+      border-bottom: 3px solid transparent;
+      transition: all 0.2s;
+      white-space: nowrap;
+    }
+
+    .boton-pestana:hover {
+      color: var(--cor-primaria);
+      background-color: rgba(139, 105, 20, 0.04);
+    }
+
+    .boton-pestana.activa {
+      color: var(--cor-primaria);
+      border-bottom-color: var(--cor-primaria);
+      font-weight: 600;
+    }
+
+    .contador-pestana {
+      display: inline-block;
+      background-color: var(--cor-aviso);
+      color: white;
+      font-size: 0.7rem;
+      font-weight: 700;
+      padding: 1px 7px;
+      border-radius: 10px;
+      margin-left: 6px;
+      vertical-align: middle;
+    }
+
+    /* ============================================================
+       Contido principal
+       ============================================================ */
+    .contido-principal {
+      padding: 20px 24px;
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+
+    .panel-seccion {
+      display: none;
+    }
+
+    .panel-seccion.visible {
+      display: block;
+    }
+
+    /* ============================================================
+       Tarxetas
+       ============================================================ */
+    .tarxeta {
+      background-color: var(--cor-tarxeta);
+      border: 1px solid var(--cor-borde);
+      border-radius: var(--radio-borde);
+      padding: 16px;
+      margin-bottom: 12px;
+      box-shadow: var(--sombra-tarxeta);
+      transition: border-color 0.2s;
+    }
+
+    .tarxeta:hover {
+      border-color: var(--cor-ouro-claro);
+    }
+
+    .tarxeta-cabeceira {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      margin-bottom: 10px;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+
+    .tarxeta-titulo {
+      font-size: 1rem;
+      font-weight: 600;
+      color: var(--cor-texto);
+    }
+
+    .tarxeta-corpo {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+      gap: 8px;
+    }
+
+    .tarxeta-campo {
+      font-size: 0.85rem;
+    }
+
+    .tarxeta-campo .etiqueta {
+      color: var(--cor-texto-gris);
+      font-size: 0.75rem;
+      display: block;
+      margin-bottom: 2px;
+    }
+
+    .tarxeta-campo .valor {
+      color: var(--cor-texto);
+    }
+
+    /* ============================================================
+       Etiquetas de estado
+       ============================================================ */
+    .etiqueta-estado {
+      display: inline-block;
+      padding: 3px 10px;
+      border-radius: 12px;
+      font-size: 0.75rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .etiqueta-estado.pendente {
+      background-color: rgba(232, 163, 23, 0.12);
+      color: var(--cor-aviso);
+      border: 1px solid rgba(232, 163, 23, 0.3);
+    }
+
+    .etiqueta-estado.aprobada {
+      background-color: rgba(61, 139, 55, 0.1);
+      color: var(--cor-exito);
+      border: 1px solid rgba(61, 139, 55, 0.3);
+    }
+
+    .etiqueta-estado.denegada {
+      background-color: rgba(192, 57, 43, 0.1);
+      color: var(--cor-erro);
+      border: 1px solid rgba(192, 57, 43, 0.3);
+    }
+
+    /* ============================================================
+       Botons
+       ============================================================ */
+    .grupo-botons {
+      display: flex;
+      gap: 8px;
+      margin-top: 12px;
+      flex-wrap: wrap;
+    }
+
+    .boton {
+      padding: 8px 16px;
+      border: none;
+      border-radius: 8px;
+      font-size: 0.8rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .boton:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+
+    .boton-aprobar {
+      background-color: var(--cor-exito);
+      color: #FFFFFF;
+    }
+
+    .boton-aprobar:hover:not(:disabled) {
+      background-color: #2E7A29;
+    }
+
+    .boton-denegar {
+      background-color: var(--cor-erro);
+      color: #FFFFFF;
+    }
+
+    .boton-denegar:hover:not(:disabled) {
+      background-color: #A83225;
+    }
+
+    .boton-gardar {
+      background-color: var(--cor-primaria);
+      color: #FFFFFF;
+    }
+
+    .boton-gardar:hover:not(:disabled) {
+      background-color: #725610;
+    }
+
+    .boton-secundario {
+      background-color: transparent;
+      color: var(--cor-texto-gris);
+      border: 1px solid var(--cor-borde);
+    }
+
+    .boton-secundario:hover:not(:disabled) {
+      color: var(--cor-texto);
+      border-color: var(--cor-ouro-claro);
+    }
+
+    /* ============================================================
+       Taboas (para pantallas anchas)
+       ============================================================ */
+    .contedor-taboa {
+      overflow-x: auto;
+      border-radius: var(--radio-borde);
+      border: 1px solid var(--cor-borde);
+      background-color: var(--cor-tarxeta);
+    }
+
+    .taboa-admin {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.85rem;
+    }
+
+    .taboa-admin th {
+      background-color: var(--cor-fondo);
+      color: var(--cor-texto-gris);
+      font-weight: 600;
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      padding: 12px 16px;
+      text-align: left;
+      border-bottom: 1px solid var(--cor-borde);
+      white-space: nowrap;
+    }
+
+    .taboa-admin td {
+      padding: 12px 16px;
+      border-bottom: 1px solid var(--cor-borde);
+      vertical-align: middle;
+    }
+
+    .taboa-admin tr:last-child td {
+      border-bottom: none;
+    }
+
+    .taboa-admin tr:hover td {
+      background-color: rgba(139, 105, 20, 0.03);
+    }
+
+    .taboa-admin .campo-email {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .taboa-admin .campo-email input {
+      padding: 6px 10px;
+      background-color: var(--cor-fondo);
+      border: 1px solid var(--cor-borde);
+      border-radius: 6px;
+      color: var(--cor-texto);
+      font-size: 0.85rem;
+      width: 200px;
+      max-width: 100%;
+    }
+
+    .taboa-admin .campo-email input:focus {
+      outline: none;
+      border-color: var(--cor-primaria);
+    }
+
+    /* ============================================================
+       Mensaxes baleiras e carga
+       ============================================================ */
+    .mensaxe-baleira {
+      text-align: center;
+      padding: 40px 20px;
+      color: var(--cor-texto-gris);
+    }
+
+    .mensaxe-baleira p {
+      font-size: 0.9rem;
+      margin-top: 8px;
+    }
+
+    .indicador-carga {
+      text-align: center;
+      padding: 40px 20px;
+      color: var(--cor-texto-gris);
+    }
+
+    .spinner {
+      display: inline-block;
+      width: 32px;
+      height: 32px;
+      border: 3px solid var(--cor-borde);
+      border-top-color: var(--cor-primaria);
+      border-radius: 50%;
+      animation: xirar 0.8s linear infinite;
+    }
+
+    @keyframes xirar {
+      to { transform: rotate(360deg); }
+    }
+
+    /* ============================================================
+       Notificacions
+       ============================================================ */
+    .contedor-notificacion {
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      z-index: 1000;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .notificacion {
+      padding: 12px 20px;
+      border-radius: var(--radio-borde);
+      font-size: 0.85rem;
+      font-weight: 500;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
+      animation: deslizarEntrada 0.3s ease-out;
+      max-width: 360px;
+    }
+
+    .notificacion.exito {
+      background-color: var(--cor-exito);
+      color: #FFFFFF;
+    }
+
+    .notificacion.erro {
+      background-color: var(--cor-erro);
+      color: #FFFFFF;
+    }
+
+    .notificacion.info {
+      background-color: var(--cor-primaria);
+      color: #FFFFFF;
+    }
+
+    @keyframes deslizarEntrada {
+      from {
+        transform: translateX(100%);
+        opacity: 0;
+      }
+      to {
+        transform: translateX(0);
+        opacity: 1;
+      }
+    }
+
+    /* ============================================================
+       Separador de datas (para citas)
+       ============================================================ */
+    .separador-data {
+      padding: 10px 0;
+      margin-top: 8px;
+    }
+
+    .separador-data span {
+      font-size: 0.8rem;
+      font-weight: 600;
+      color: var(--cor-primaria);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    /* ============================================================
+       Filtro / buscador
+       ============================================================ */
+    .barra-ferramentas {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 16px;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+
+    .barra-ferramentas h2 {
+      font-size: 1.1rem;
+      font-weight: 600;
+      color: var(--cor-texto);
+    }
+
+    .campo-busca {
+      padding: 8px 14px;
+      background-color: #FFFFFF;
+      border: 1px solid var(--cor-borde);
+      border-radius: 8px;
+      color: var(--cor-texto);
+      font-size: 0.85rem;
+      width: 240px;
+      max-width: 100%;
+    }
+
+    .campo-busca:focus {
+      outline: none;
+      border-color: var(--cor-primaria);
+    }
+
+    .campo-busca::placeholder {
+      color: var(--cor-texto-gris);
+    }
+
+    /* ============================================================
+       Pe de paxina
+       ============================================================ */
+    .pe-paxina {
+      text-align: center;
+      padding: 20px;
+      color: var(--cor-texto-gris);
+      font-size: 0.75rem;
+      border-top: 1px solid var(--cor-borde);
+      margin-top: 40px;
+    }
+
+    /* ============================================================
+       Responsive
+       ============================================================ */
+    @media (max-width: 768px) {
+      .cabeceira {
+        padding: 16px;
+      }
+
+      .cabeceira h1 {
+        font-size: 1.2rem;
+      }
+
+      .contido-principal {
+        padding: 16px;
+      }
+
+      .tarxeta-corpo {
+        grid-template-columns: 1fr 1fr;
+      }
+
+      .campo-busca {
+        width: 100%;
+      }
+
+      .so-escritorio {
+        display: none !important;
+      }
+
+      .so-movil {
+        display: block !important;
+      }
+    }
+
+    @media (min-width: 769px) {
+      .so-movil {
+        display: none !important;
+      }
+    }
+
+    /* ============================================================
+       Pantalla de inicio de sesion
+       ============================================================ */
+    .pantalla-login {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 80vh;
+      padding: 20px;
+    }
+
+    .formulario-login {
+      background-color: var(--cor-tarxeta);
+      border: 1px solid var(--cor-borde);
+      border-radius: var(--radio-borde);
+      padding: 40px 32px;
+      max-width: 400px;
+      width: 100%;
+      box-shadow: var(--sombra-tarxeta);
+      text-align: center;
+    }
+
+    .formulario-login h2 {
+      font-size: 1.2rem;
+      font-weight: 600;
+      color: var(--cor-texto);
+      margin-bottom: 8px;
+    }
+
+    .formulario-login p {
+      font-size: 0.85rem;
+      color: var(--cor-texto-gris);
+      margin-bottom: 24px;
+    }
+
+    .formulario-login input[type="password"] {
+      width: 100%;
+      padding: 12px 14px;
+      background-color: var(--cor-fondo);
+      border: 1px solid var(--cor-borde);
+      border-radius: 8px;
+      color: var(--cor-texto);
+      font-size: 0.9rem;
+      margin-bottom: 16px;
+    }
+
+    .formulario-login input[type="password"]:focus {
+      outline: none;
+      border-color: var(--cor-primaria);
+    }
+
+    .formulario-login .boton-login {
+      width: 100%;
+      padding: 12px;
+      background: linear-gradient(135deg, #8B6914, #C8A84E);
+      color: #FFFFFF;
+      border: none;
+      border-radius: 8px;
+      font-size: 0.9rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: opacity 0.2s;
+    }
+
+    .formulario-login .boton-login:hover {
+      opacity: 0.9;
+    }
+
+    .formulario-login .boton-login:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+
+    .formulario-login .erro-login {
+      color: var(--cor-erro);
+      font-size: 0.85rem;
+      margin-top: 12px;
+      display: none;
+    }
+
+    .boton-pechar-sesion {
+      background: rgba(255, 255, 255, 0.2);
+      color: #FFFFFF;
+      border: 1px solid rgba(255, 255, 255, 0.3);
+      padding: 6px 14px;
+      border-radius: 6px;
+      font-size: 0.8rem;
+      font-weight: 500;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+
+    .boton-pechar-sesion:hover {
+      background: rgba(255, 255, 255, 0.3);
+    }
+
+    .cabeceira-contido {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- ============================================================
+       Cabeceira
+       ============================================================ -->
+  <header class="cabeceira">
+    <div class="cabeceira-contido">
+      <div>
+        <h1>Peluqueria Raul - Panel de Xestion</h1>
+        <p>A Estrada</p>
+      </div>
+      <button class="boton-pechar-sesion" id="botonPecharSesion" style="display:none;" onclick="pecharSesion()">Pechar sesion</button>
+    </div>
+  </header>
+
+  <!-- ============================================================
+       Pantalla de inicio de sesion
+       ============================================================ -->
+  <div id="pantallaLogin" class="pantalla-login" style="display:none;">
+    <div class="formulario-login">
+      <h2>Acceso ao panel</h2>
+      <p>Introduce o contrasinal de administracion</p>
+      <input type="password" id="campoContrasinal" placeholder="Contrasinal de administracion"
+        onkeydown="if(event.key==='Enter') iniciarSesion()">
+      <button class="boton-login" id="botonLogin" onclick="iniciarSesion()">Acceder</button>
+      <p class="erro-login" id="erroLogin"></p>
+    </div>
+  </div>
+
+  <input type="hidden" id="urlApi"
+    value="https://script.google.com/macros/s/AKfycbx3rcU-i_k8KKYmoaxiSOZvKmIli_au1N1HFBvbRu0tveAPLNP6h4yOr-eQCU8_Ljgg/exec">
+  <div id="puntoEstado" style="display:none;"></div>
+  <span id="textoEstado" style="display:none;"></span>
+
+  <!-- ============================================================
+       Navegacion por pestanas
+       ============================================================ -->
+  <nav class="navegacion-pestanas" id="navegacionPestanas" style="display:none;">
+    <button class="boton-pestana activa" data-pestana="cancelacions" onclick="cambiarPestana('cancelacions')">
+      Cancelacions
+      <span class="contador-pestana" id="contadorCancelacions" style="display:none;">0</span>
+    </button>
+    <button class="boton-pestana" data-pestana="citasExtra" onclick="cambiarPestana('citasExtra')">
+      Citas Extra
+      <span class="contador-pestana" id="contadorCitasExtra" style="display:none;">0</span>
+    </button>
+    <button class="boton-pestana" data-pestana="citas" onclick="cambiarPestana('citas')">
+      Proximas Citas
+      <span class="contador-pestana" id="contadorCitas" style="display:none;">0</span>
+    </button>
+    <button class="boton-pestana" data-pestana="clientes" onclick="cambiarPestana('clientes')">
+      Clientes
+      <span class="contador-pestana" id="contadorClientes" style="display:none;">0</span>
+    </button>
+  </nav>
+
+  <!-- ============================================================
+       Contido principal
+       ============================================================ -->
+  <main class="contido-principal" id="contidoPrincipal" style="display:none;">
+
+    <!-- ============================================================
+         Seccion: Cancelacions
+         ============================================================ -->
+    <section id="seccionCancelacions" class="panel-seccion visible">
+      <div class="barra-ferramentas">
+        <h2>Solicitudes de Cancelacion</h2>
+        <button class="boton boton-secundario" onclick="cargarCancelacions()">Actualizar</button>
+      </div>
+      <div id="contidoCancelacions">
+        <div class="indicador-carga">
+          <div class="spinner"></div>
+          <p>Cargando solicitudes...</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============================================================
+         Seccion: Citas Extra
+         ============================================================ -->
+    <section id="seccionCitasExtra" class="panel-seccion">
+      <div class="barra-ferramentas">
+        <h2>Solicitudes de Cita Extra</h2>
+        <button class="boton boton-secundario" onclick="cargarCitasExtra()">Actualizar</button>
+      </div>
+      <div id="contidoCitasExtra">
+        <div class="indicador-carga">
+          <div class="spinner"></div>
+          <p>Cargando solicitudes...</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============================================================
+         Seccion: Proximas Citas
+         ============================================================ -->
+    <section id="seccionCitas" class="panel-seccion">
+      <div class="barra-ferramentas">
+        <h2>Proximas Citas</h2>
+        <button class="boton boton-secundario" onclick="cargarCitas()">Actualizar</button>
+      </div>
+      <div id="contidoCitas">
+        <div class="indicador-carga">
+          <div class="spinner"></div>
+          <p>Cargando citas...</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============================================================
+         Seccion: Clientes
+         ============================================================ -->
+    <section id="seccionClientes" class="panel-seccion">
+      <div class="barra-ferramentas">
+        <h2>Clientes</h2>
+        <input type="text" class="campo-busca" id="buscaClientes"
+          placeholder="Buscar por nome..." oninput="filtrarClientes()">
+      </div>
+      <div id="contidoClientes">
+        <div class="indicador-carga">
+          <div class="spinner"></div>
+          <p>Cargando clientes...</p>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- ============================================================
+       Pe de paxina
+       ============================================================ -->
+  <footer class="pe-paxina" id="pePaxina" style="display:none;">
+    Panel de Xestion - Peluqueria de Raul | Actualizacion automatica cada 30 segundos
+  </footer>
+
+  <!-- ============================================================
+       Contedor de notificacions
+       ============================================================ -->
+  <div class="contedor-notificacion" id="contedorNotificacion"></div>
+
+  <!-- ============================================================
+       JavaScript
+       ============================================================ -->
+  <script>
+    // ============================================================
+    // Variables globais
+    // ============================================================
+    var pestanaActual = "cancelacions";
+    var datosCancelacions = [];
+    var datosCitasExtra = [];
+    var datosCitas = [];
+    var datosClientes = [];
+    var temporizadorActualizacion = null;
+
+    // ============================================================
+    // Xestion de sesion de administracion
+    // ============================================================
+    function obterClaveAdmin() {
+      return localStorage.getItem("admin_key") || "";
+    }
+
+    function iniciarSesion() {
+      var contrasinal = document.getElementById("campoContrasinal").value.trim();
+      var erroElemento = document.getElementById("erroLogin");
+      var botonLogin = document.getElementById("botonLogin");
+
+      if (!contrasinal) {
+        erroElemento.textContent = "Introduce o contrasinal";
+        erroElemento.style.display = "block";
+        return;
+      }
+
+      botonLogin.disabled = true;
+      botonLogin.textContent = "Verificando...";
+      erroElemento.style.display = "none";
+
+      // Verificar o contrasinal intentando acceder a un endpoint protexido
+      var url = obterUrlApi();
+      fetch(url + "?accion=obtener_cancelaciones&admin_key=" + encodeURIComponent(contrasinal), {
+        method: "GET",
+        redirect: "follow"
+      })
+        .then(function (resposta) { return resposta.json(); })
+        .then(function (datos) {
+          if (datos.error && datos.mensaje === "Acceso non autorizado") {
+            erroElemento.textContent = "Contrasinal incorrecto";
+            erroElemento.style.display = "block";
+            botonLogin.disabled = false;
+            botonLogin.textContent = "Acceder";
+          } else {
+            // Contrasinal correcto, gardar e mostrar panel
+            localStorage.setItem("admin_key", contrasinal);
+            mostrarPanel();
+            cargarTodosOsDatos();
+            iniciarActualizacionAutomatica();
+          }
+        })
+        .catch(function (erro) {
+          erroElemento.textContent = "Erro de conexion co servidor";
+          erroElemento.style.display = "block";
+          botonLogin.disabled = false;
+          botonLogin.textContent = "Acceder";
+        });
+    }
+
+    function pecharSesion() {
+      localStorage.removeItem("admin_key");
+      if (temporizadorActualizacion) {
+        clearInterval(temporizadorActualizacion);
+        temporizadorActualizacion = null;
+      }
+      mostrarLogin();
+    }
+
+    function mostrarPanel() {
+      document.getElementById("pantallaLogin").style.display = "none";
+      document.getElementById("navegacionPestanas").style.display = "flex";
+      document.getElementById("contidoPrincipal").style.display = "block";
+      document.getElementById("pePaxina").style.display = "block";
+      document.getElementById("botonPecharSesion").style.display = "inline-block";
+    }
+
+    function mostrarLogin() {
+      document.getElementById("pantallaLogin").style.display = "flex";
+      document.getElementById("navegacionPestanas").style.display = "none";
+      document.getElementById("contidoPrincipal").style.display = "none";
+      document.getElementById("pePaxina").style.display = "none";
+      document.getElementById("botonPecharSesion").style.display = "none";
+      document.getElementById("campoContrasinal").value = "";
+      document.getElementById("erroLogin").style.display = "none";
+    }
+
+    // ============================================================
+    // Inicializacion
+    // ============================================================
+    document.addEventListener("DOMContentLoaded", function () {
+      var claveGardada = obterClaveAdmin();
+      if (claveGardada) {
+        // Verificar que a clave gardada segue sendo valida
+        var url = obterUrlApi();
+        fetch(url + "?accion=obtener_cancelaciones&admin_key=" + encodeURIComponent(claveGardada), {
+          method: "GET",
+          redirect: "follow"
+        })
+          .then(function (resposta) { return resposta.json(); })
+          .then(function (datos) {
+            if (datos.error && datos.mensaje === "Acceso non autorizado") {
+              localStorage.removeItem("admin_key");
+              mostrarLogin();
+            } else {
+              mostrarPanel();
+              cargarTodosOsDatos();
+              iniciarActualizacionAutomatica();
+            }
+          })
+          .catch(function () {
+            // Se hai erro de rede, mostrar o panel igualmente (xa ten clave gardada)
+            mostrarPanel();
+            cargarTodosOsDatos();
+            iniciarActualizacionAutomatica();
+          });
+      } else {
+        mostrarLogin();
+      }
+    });
+
+    // ============================================================
+    // Obter URL do API
+    // ============================================================
+    function obterUrlApi() {
+      return document.getElementById("urlApi").value.trim();
+    }
+
+    // ============================================================
+    // Actualizar indicador de estado
+    // ============================================================
+    function actualizarEstado(tipo, texto) {
+      var punto = document.getElementById("puntoEstado");
+      var textoElemento = document.getElementById("textoEstado");
+
+      punto.className = "punto-estado " + tipo;
+      textoElemento.textContent = texto;
+    }
+
+    // ============================================================
+    // Navegacion entre pestanas
+    // ============================================================
+    function cambiarPestana(nomePestana) {
+      pestanaActual = nomePestana;
+
+      var botons = document.querySelectorAll(".boton-pestana");
+      botons.forEach(function (boton) {
+        boton.classList.toggle("activa", boton.dataset.pestana === nomePestana);
+      });
+
+      var seccions = document.querySelectorAll(".panel-seccion");
+      seccions.forEach(function (seccion) {
+        seccion.classList.remove("visible");
+      });
+
+      var seccionsMapa = {
+        "cancelacions": "seccionCancelacions",
+        "citasExtra": "seccionCitasExtra",
+        "citas": "seccionCitas",
+        "clientes": "seccionClientes"
+      };
+
+      document.getElementById(seccionsMapa[nomePestana]).classList.add("visible");
+    }
+
+    // ============================================================
+    // Notificacions
+    // ============================================================
+    function mostrarNotificacion(mensaxe, tipo) {
+      var contedor = document.getElementById("contedorNotificacion");
+      var elemento = document.createElement("div");
+      elemento.className = "notificacion " + (tipo || "info");
+      elemento.textContent = mensaxe;
+      contedor.appendChild(elemento);
+
+      setTimeout(function () {
+        elemento.style.opacity = "0";
+        elemento.style.transition = "opacity 0.3s";
+        setTimeout(function () {
+          if (elemento.parentNode) {
+            elemento.parentNode.removeChild(elemento);
+          }
+        }, 300);
+      }, 3000);
+    }
+
+    // ============================================================
+    // Peticions ao API
+    // ============================================================
+    function peticionGet(accion) {
+      var url = obterUrlApi();
+      if (!url) {
+        return Promise.reject(new Error("URL do API non configurada"));
+      }
+
+      actualizarEstado("cargando", "Consultando...");
+
+      var claveAdmin = obterClaveAdmin();
+      var parametros = "?accion=" + encodeURIComponent(accion);
+      if (claveAdmin) {
+        parametros += "&admin_key=" + encodeURIComponent(claveAdmin);
+      }
+
+      return fetch(url + parametros, {
+        method: "GET",
+        redirect: "follow"
+      })
+        .then(function (resposta) {
+          if (!resposta.ok) {
+            throw new Error("Erro HTTP: " + resposta.status);
+          }
+          return resposta.json();
+        })
+        .then(function (datos) {
+          actualizarEstado("conectado", "Conectado");
+          return datos;
+        })
+        .catch(function (erro) {
+          actualizarEstado("erro", "Erro de conexion");
+          throw erro;
+        });
+    }
+
+    function peticionPost(accion, datos) {
+      var url = obterUrlApi();
+      if (!url) {
+        return Promise.reject(new Error("URL do API non configurada"));
+      }
+
+      actualizarEstado("cargando", "Enviando...");
+
+      var claveAdmin = obterClaveAdmin();
+      var corpo = Object.assign({}, datos, { accion: accion, admin_key: claveAdmin });
+
+      return fetch(url, {
+        method: "POST",
+        redirect: "follow",
+        headers: {
+          "Content-Type": "text/plain"
+        },
+        body: JSON.stringify(corpo)
+      })
+        .then(function (resposta) {
+          if (!resposta.ok) {
+            throw new Error("Erro HTTP: " + resposta.status);
+          }
+          return resposta.json();
+        })
+        .then(function (datos) {
+          actualizarEstado("conectado", "Conectado");
+          return datos;
+        })
+        .catch(function (erro) {
+          actualizarEstado("erro", "Erro de conexion");
+          throw erro;
+        });
+    }
+
+    // ============================================================
+    // Cargar todos os datos
+    // ============================================================
+    function cargarTodosOsDatos() {
+      cargarCancelacions();
+      cargarCitasExtra();
+      cargarCitas();
+      cargarClientes();
+    }
+
+    // ============================================================
+    // Actualizacion automatica cada 30 segundos
+    // ============================================================
+    function iniciarActualizacionAutomatica() {
+      if (temporizadorActualizacion) {
+        clearInterval(temporizadorActualizacion);
+      }
+      temporizadorActualizacion = setInterval(function () {
+        cargarTodosOsDatos();
+      }, 30000);
+    }
+
+    // ============================================================
+    // CANCELACIONS
+    // ============================================================
+    function cargarCancelacions() {
+      peticionGet("obtener_cancelaciones")
+        .then(function (resultado) {
+          if (resultado.exito) {
+            datosCancelacions = resultado.cancelaciones || [];
+            renderizarCancelacions();
+          } else {
+            mostrarNotificacion("Erro ao cargar cancelacions: " + resultado.mensaje, "erro");
+          }
+        })
+        .catch(function (erro) {
+          document.getElementById("contidoCancelacions").innerHTML =
+            '<div class="mensaxe-baleira"><p>Erro ao conectar co servidor</p><p>' + erro.message + '</p></div>';
+        });
+    }
+
+    function renderizarCancelacions() {
+      var contedor = document.getElementById("contidoCancelacions");
+
+      var pendentes = datosCancelacions.filter(function (c) {
+        return c.estado === "Pendiente";
+      });
+
+      var contadorElemento = document.getElementById("contadorCancelacions");
+      if (pendentes.length > 0) {
+        contadorElemento.textContent = pendentes.length;
+        contadorElemento.style.display = "inline-block";
+      } else {
+        contadorElemento.style.display = "none";
+      }
+
+      if (datosCancelacions.length === 0) {
+        contedor.innerHTML = '<div class="mensaxe-baleira"><p>Non hai solicitudes de cancelacion</p></div>';
+        return;
+      }
+
+      var ordenadas = datosCancelacions.slice().sort(function (a, b) {
+        if (a.estado === "Pendiente" && b.estado !== "Pendiente") return -1;
+        if (a.estado !== "Pendiente" && b.estado === "Pendiente") return 1;
+        return 0;
+      });
+
+      var html = "";
+
+      ordenadas.forEach(function (solicitude) {
+        var claseEstado = solicitude.estado === "Pendiente" ? "pendente" :
+                          solicitude.estado === "Aprobada" ? "aprobada" : "denegada";
+        var ePendente = solicitude.estado === "Pendiente";
+
+        html += '<div class="tarxeta">';
+        html += '  <div class="tarxeta-cabeceira">';
+        html += '    <span class="tarxeta-titulo">' + escaparHtml(solicitude.cliente) + '</span>';
+        html += '    <span class="etiqueta-estado ' + claseEstado + '">' + escaparHtml(solicitude.estado) + '</span>';
+        html += '  </div>';
+        html += '  <div class="tarxeta-corpo">';
+        html += '    <div class="tarxeta-campo"><span class="etiqueta">Data da cita</span><span class="valor">' + escaparHtml(solicitude.fechaCita) + '</span></div>';
+        html += '    <div class="tarxeta-campo"><span class="etiqueta">Hora</span><span class="valor">' + escaparHtml(solicitude.horaCita) + '</span></div>';
+        html += '    <div class="tarxeta-campo"><span class="etiqueta">Servizo</span><span class="valor">' + escaparHtml(solicitude.servicio) + '</span></div>';
+        html += '    <div class="tarxeta-campo"><span class="etiqueta">Data solicitude</span><span class="valor">' + escaparHtml(solicitude.fechaSolicitud) + '</span></div>';
+        html += '  </div>';
+
+        if (ePendente) {
+          html += '  <div class="grupo-botons">';
+          html += '    <button class="boton boton-aprobar" onclick="procesarCancelacion(' + solicitude.indice + ', \'Aprobada\', this)">Aprobar</button>';
+          html += '    <button class="boton boton-denegar" onclick="procesarCancelacion(' + solicitude.indice + ', \'Denegada\', this)">Denegar</button>';
+          html += '  </div>';
+        }
+
+        html += '</div>';
+      });
+
+      contedor.innerHTML = html;
+    }
+
+    function procesarCancelacion(indice, novoEstado, botonPulsado) {
+      var grupoBotons = botonPulsado.parentNode;
+      var botons = grupoBotons.querySelectorAll(".boton");
+      botons.forEach(function (b) { b.disabled = true; });
+
+      var textoOrixinal = botonPulsado.textContent;
+      botonPulsado.textContent = "Procesando...";
+
+      peticionPost("actualizar_cancelacion", {
+        indice: indice,
+        estado: novoEstado
+      })
+        .then(function (resultado) {
+          if (resultado.exito) {
+            var textoEstado = novoEstado === "Aprobada" ? "aprobada" : "denegada";
+            mostrarNotificacion("Solicitude " + textoEstado + " correctamente", "exito");
+            cargarCancelacions();
+            if (novoEstado === "Aprobada") {
+              cargarCitas();
+            }
+          } else {
+            mostrarNotificacion("Erro: " + resultado.mensaje, "erro");
+            botons.forEach(function (b) { b.disabled = false; });
+            botonPulsado.textContent = textoOrixinal;
+          }
+        })
+        .catch(function (erro) {
+          mostrarNotificacion("Erro de conexion: " + erro.message, "erro");
+          botons.forEach(function (b) { b.disabled = false; });
+          botonPulsado.textContent = textoOrixinal;
+        });
+    }
+
+    // ============================================================
+    // CITAS EXTRA
+    // ============================================================
+    function cargarCitasExtra() {
+      peticionGet("obtener_citas_extra")
+        .then(function (resultado) {
+          if (resultado.exito) {
+            datosCitasExtra = resultado.citasExtra || [];
+            renderizarCitasExtra();
+          } else {
+            mostrarNotificacion("Erro ao cargar citas extra: " + resultado.mensaje, "erro");
+          }
+        })
+        .catch(function (erro) {
+          document.getElementById("contidoCitasExtra").innerHTML =
+            '<div class="mensaxe-baleira"><p>Erro ao conectar co servidor</p><p>' + erro.message + '</p></div>';
+        });
+    }
+
+    function renderizarCitasExtra() {
+      var contedor = document.getElementById("contidoCitasExtra");
+
+      var pendentes = datosCitasExtra.filter(function (c) {
+        return c.estado === "Pendente";
+      });
+
+      var contadorElemento = document.getElementById("contadorCitasExtra");
+      if (pendentes.length > 0) {
+        contadorElemento.textContent = pendentes.length;
+        contadorElemento.style.display = "inline-block";
+      } else {
+        contadorElemento.style.display = "none";
+      }
+
+      if (datosCitasExtra.length === 0) {
+        contedor.innerHTML = '<div class="mensaxe-baleira"><p>Non hai solicitudes de cita extra</p></div>';
+        return;
+      }
+
+      var ordenadas = datosCitasExtra.slice().sort(function (a, b) {
+        if (a.estado === "Pendente" && b.estado !== "Pendente") return -1;
+        if (a.estado !== "Pendente" && b.estado === "Pendente") return 1;
+        return 0;
+      });
+
+      var html = "";
+
+      ordenadas.forEach(function (solicitude) {
+        var claseEstado = solicitude.estado === "Pendente" ? "pendente" :
+                          solicitude.estado === "Aprobada" ? "aprobada" : "denegada";
+        var ePendente = solicitude.estado === "Pendente";
+
+        html += '<div class="tarxeta">';
+        html += '  <div class="tarxeta-cabeceira">';
+        html += '    <span class="tarxeta-titulo">' + escaparHtml(solicitude.cliente) + '</span>';
+        html += '    <span class="etiqueta-estado ' + claseEstado + '">' + escaparHtml(solicitude.estado) + '</span>';
+        html += '  </div>';
+        html += '  <div class="tarxeta-corpo">';
+        html += '    <div class="tarxeta-campo"><span class="etiqueta">Servizo</span><span class="valor">' + escaparHtml(solicitude.servizo) + '</span></div>';
+        html += '    <div class="tarxeta-campo"><span class="etiqueta">Data preferida</span><span class="valor">' + escaparHtml(solicitude.fechaPreferida) + '</span></div>';
+        html += '    <div class="tarxeta-campo"><span class="etiqueta">Hora preferida</span><span class="valor">' + escaparHtml(solicitude.horaPreferida) + '</span></div>';
+        html += '    <div class="tarxeta-campo"><span class="etiqueta">Data solicitude</span><span class="valor">' + escaparHtml(solicitude.fechaSolicitude) + '</span></div>';
+
+        if (solicitude.nota) {
+          html += '    <div class="tarxeta-campo" style="grid-column: 1 / -1;"><span class="etiqueta">Nota</span><span class="valor">' + escaparHtml(solicitude.nota) + '</span></div>';
+        }
+
+        html += '  </div>';
+
+        if (ePendente) {
+          html += '  <div class="grupo-botons">';
+          html += '    <button class="boton boton-aprobar" onclick="procesarCitaExtra(' + solicitude.indice + ', \'Aprobada\', this)">Aprobar</button>';
+          html += '    <button class="boton boton-denegar" onclick="procesarCitaExtra(' + solicitude.indice + ', \'Denegada\', this)">Denegar</button>';
+          html += '  </div>';
+        }
+
+        html += '</div>';
+      });
+
+      contedor.innerHTML = html;
+    }
+
+    function procesarCitaExtra(indice, novoEstado, botonPulsado) {
+      var grupoBotons = botonPulsado.parentNode;
+      var botons = grupoBotons.querySelectorAll(".boton");
+      botons.forEach(function (b) { b.disabled = true; });
+
+      var textoOrixinal = botonPulsado.textContent;
+      botonPulsado.textContent = "Procesando...";
+
+      peticionPost("actualizar_cita_extra", {
+        indice: indice,
+        estado: novoEstado
+      })
+        .then(function (resultado) {
+          if (resultado.exito) {
+            var textoEstado = novoEstado === "Aprobada" ? "aprobada" : "denegada";
+            mostrarNotificacion("Solicitude de cita extra " + textoEstado + " correctamente", "exito");
+            cargarCitasExtra();
+            if (novoEstado === "Aprobada") {
+              cargarCitas();
+            }
+          } else {
+            mostrarNotificacion("Erro: " + resultado.mensaje, "erro");
+            botons.forEach(function (b) { b.disabled = false; });
+            botonPulsado.textContent = textoOrixinal;
+          }
+        })
+        .catch(function (erro) {
+          mostrarNotificacion("Erro de conexion: " + erro.message, "erro");
+          botons.forEach(function (b) { b.disabled = false; });
+          botonPulsado.textContent = textoOrixinal;
+        });
+    }
+
+    // ============================================================
+    // CITAS
+    // ============================================================
+    function cargarCitas() {
+      peticionGet("obtener_todas_citas_admin")
+        .then(function (resultado) {
+          if (resultado.exito) {
+            datosCitas = resultado.citas || [];
+            renderizarCitas();
+          } else {
+            mostrarNotificacion("Erro ao cargar citas: " + resultado.mensaje, "erro");
+          }
+        })
+        .catch(function (erro) {
+          document.getElementById("contidoCitas").innerHTML =
+            '<div class="mensaxe-baleira"><p>Erro ao conectar co servidor</p><p>' + erro.message + '</p></div>';
+        });
+    }
+
+    function renderizarCitas() {
+      var contedor = document.getElementById("contidoCitas");
+
+      var contadorElemento = document.getElementById("contadorCitas");
+      if (datosCitas.length > 0) {
+        contadorElemento.textContent = datosCitas.length;
+        contadorElemento.style.display = "inline-block";
+      } else {
+        contadorElemento.style.display = "none";
+      }
+
+      if (datosCitas.length === 0) {
+        contedor.innerHTML = '<div class="mensaxe-baleira"><p>Non hai citas proximas</p></div>';
+        return;
+      }
+
+      // Agrupar citas por data
+      var citasPorData = {};
+      datosCitas.forEach(function (cita) {
+        var claveData = cita.fecha || "Sen data";
+        if (!citasPorData[claveData]) {
+          citasPorData[claveData] = [];
+        }
+        citasPorData[claveData].push(cita);
+      });
+
+      var html = "";
+
+      var hoxe = new Date();
+      var diaHoxe = ("0" + hoxe.getDate()).slice(-2);
+      var mesHoxe = ("0" + (hoxe.getMonth() + 1)).slice(-2);
+      var anoHoxe = hoxe.getFullYear();
+      var dataHoxeTexto = diaHoxe + "/" + mesHoxe + "/" + anoHoxe;
+
+      Object.keys(citasPorData).forEach(function (data) {
+        var eHoxe = (data === dataHoxeTexto);
+        var etiquetaData = eHoxe ? "HOXE - " + data : data;
+        var citasDoDia = citasPorData[data];
+
+        if (citasDoDia[0] && citasDoDia[0].dia) {
+          etiquetaData += " (" + citasDoDia[0].dia + ")";
+        }
+
+        html += '<div class="separador-data"><span>' + escaparHtml(etiquetaData) + ' - ' + citasDoDia.length + ' cita(s)</span></div>';
+
+        citasDoDia.forEach(function (cita) {
+          html += '<div class="tarxeta">';
+          html += '  <div class="tarxeta-cabeceira">';
+          html += '    <span class="tarxeta-titulo">' + escaparHtml(cita.hora) + ' - ' + escaparHtml(cita.cliente) + '</span>';
+          html += '  </div>';
+          html += '  <div class="tarxeta-corpo">';
+          html += '    <div class="tarxeta-campo"><span class="etiqueta">Servizo</span><span class="valor">' + escaparHtml(cita.servicio) + '</span></div>';
+          html += '    <div class="tarxeta-campo"><span class="etiqueta">Importe</span><span class="valor">' + formatearImporte(cita.importe) + '</span></div>';
+          html += '  </div>';
+          html += '</div>';
+        });
+      });
+
+      contedor.innerHTML = html;
+    }
+
+    // ============================================================
+    // CLIENTES
+    // ============================================================
+    function cargarClientes() {
+      peticionGet("obtener_clientes")
+        .then(function (resultado) {
+          if (resultado.exito) {
+            datosClientes = resultado.clientes || [];
+            renderizarClientes();
+          } else {
+            mostrarNotificacion("Erro ao cargar clientes: " + resultado.mensaje, "erro");
+          }
+        })
+        .catch(function (erro) {
+          document.getElementById("contidoClientes").innerHTML =
+            '<div class="mensaxe-baleira"><p>Erro ao conectar co servidor</p><p>' + erro.message + '</p></div>';
+        });
+    }
+
+    function renderizarClientes() {
+      var contedor = document.getElementById("contidoClientes");
+
+      var contadorElemento = document.getElementById("contadorClientes");
+      if (datosClientes.length > 0) {
+        contadorElemento.textContent = datosClientes.length;
+        contadorElemento.style.display = "inline-block";
+      } else {
+        contadorElemento.style.display = "none";
+      }
+
+      if (datosClientes.length === 0) {
+        contedor.innerHTML = '<div class="mensaxe-baleira"><p>Non hai clientes rexistrados</p></div>';
+        return;
+      }
+
+      // Vista de taboa para escritorio
+      var htmlTaboa = '<div class="contedor-taboa so-escritorio">';
+      htmlTaboa += '<table class="taboa-admin">';
+      htmlTaboa += '<thead><tr>';
+      htmlTaboa += '<th>Cliente</th>';
+      htmlTaboa += '<th>Total Citas</th>';
+      htmlTaboa += '<th>Email</th>';
+      htmlTaboa += '<th>Telefono</th>';
+      htmlTaboa += '<th>Accions</th>';
+      htmlTaboa += '</tr></thead>';
+      htmlTaboa += '<tbody>';
+
+      datosClientes.forEach(function (cliente) {
+        htmlTaboa += '<tr id="filaCliente' + cliente.indice + '">';
+        htmlTaboa += '<td>' + escaparHtml(cliente.nombre) + '</td>';
+        htmlTaboa += '<td>' + escaparHtml(String(cliente.totalCitas)) + '</td>';
+        htmlTaboa += '<td><div class="campo-email">';
+        htmlTaboa += '<input type="email" id="emailCliente' + cliente.indice + '" value="' + escaparAtributo(cliente.email) + '" placeholder="Sen email vinculado">';
+        htmlTaboa += '</div></td>';
+        htmlTaboa += '<td>' + escaparHtml(cliente.telefono || "-") + '</td>';
+        htmlTaboa += '<td><button class="boton boton-gardar" onclick="gardarEmail(' + cliente.indice + ', this)">Gardar</button></td>';
+        htmlTaboa += '</tr>';
+      });
+
+      htmlTaboa += '</tbody></table></div>';
+
+      // Vista de tarxetas para movil
+      var htmlTarxetas = '<div class="so-movil">';
+
+      datosClientes.forEach(function (cliente) {
+        htmlTarxetas += '<div class="tarxeta">';
+        htmlTarxetas += '  <div class="tarxeta-cabeceira">';
+        htmlTarxetas += '    <span class="tarxeta-titulo">' + escaparHtml(cliente.nombre) + '</span>';
+        htmlTarxetas += '  </div>';
+        htmlTarxetas += '  <div class="tarxeta-corpo">';
+        htmlTarxetas += '    <div class="tarxeta-campo"><span class="etiqueta">Total citas</span><span class="valor">' + escaparHtml(String(cliente.totalCitas)) + '</span></div>';
+        htmlTarxetas += '    <div class="tarxeta-campo"><span class="etiqueta">Telefono</span><span class="valor">' + escaparHtml(cliente.telefono || "-") + '</span></div>';
+        htmlTarxetas += '  </div>';
+        htmlTarxetas += '  <div style="margin-top: 10px;">';
+        htmlTarxetas += '    <label style="font-size: 0.75rem; color: var(--cor-texto-gris); display: block; margin-bottom: 4px;">Email</label>';
+        htmlTarxetas += '    <div style="display: flex; gap: 8px;">';
+        htmlTarxetas += '      <input type="email" id="emailClienteMovil' + cliente.indice + '" value="' + escaparAtributo(cliente.email) + '" placeholder="Sen email vinculado" style="flex:1; padding: 8px 10px; background-color: var(--cor-fondo); border: 1px solid var(--cor-borde); border-radius: 6px; color: var(--cor-texto); font-size: 0.85rem;">';
+        htmlTarxetas += '      <button class="boton boton-gardar" onclick="gardarEmailMovil(' + cliente.indice + ', this)">Gardar</button>';
+        htmlTarxetas += '    </div>';
+        htmlTarxetas += '  </div>';
+        htmlTarxetas += '</div>';
+      });
+
+      htmlTarxetas += '</div>';
+
+      contedor.innerHTML = htmlTaboa + htmlTarxetas;
+    }
+
+    function gardarEmail(indice, botonPulsado) {
+      var campoEmail = document.getElementById("emailCliente" + indice);
+      var novoEmail = campoEmail.value.trim();
+      enviarActualizacionEmail(indice, novoEmail, botonPulsado);
+    }
+
+    function gardarEmailMovil(indice, botonPulsado) {
+      var campoEmail = document.getElementById("emailClienteMovil" + indice);
+      var novoEmail = campoEmail.value.trim();
+      enviarActualizacionEmail(indice, novoEmail, botonPulsado);
+    }
+
+    function enviarActualizacionEmail(indice, email, botonPulsado) {
+      botonPulsado.disabled = true;
+      var textoOrixinal = botonPulsado.textContent;
+      botonPulsado.textContent = "Gardando...";
+
+      peticionPost("actualizar_email_cliente", {
+        indice: indice,
+        email: email
+      })
+        .then(function (resultado) {
+          if (resultado.exito) {
+            mostrarNotificacion("Email actualizado correctamente", "exito");
+          } else {
+            mostrarNotificacion("Erro: " + resultado.mensaje, "erro");
+          }
+          botonPulsado.disabled = false;
+          botonPulsado.textContent = textoOrixinal;
+        })
+        .catch(function (erro) {
+          mostrarNotificacion("Erro de conexion: " + erro.message, "erro");
+          botonPulsado.disabled = false;
+          botonPulsado.textContent = textoOrixinal;
+        });
+    }
+
+    function filtrarClientes() {
+      var textoBusca = document.getElementById("buscaClientes").value.toLowerCase().trim();
+
+      if (!textoBusca) {
+        renderizarClientes();
+        return;
+      }
+
+      var clientesFiltrados = datosClientes.filter(function (cliente) {
+        return cliente.nombre.toLowerCase().indexOf(textoBusca) !== -1 ||
+               (cliente.email && cliente.email.toLowerCase().indexOf(textoBusca) !== -1) ||
+               (cliente.telefono && cliente.telefono.toLowerCase().indexOf(textoBusca) !== -1);
+      });
+
+      var datosOriginais = datosClientes;
+      datosClientes = clientesFiltrados;
+      renderizarClientes();
+      datosClientes = datosOriginais;
+    }
+
+    // ============================================================
+    // Funcions auxiliares
+    // ============================================================
+    function escaparHtml(texto) {
+      if (!texto) return "";
+      var div = document.createElement("div");
+      div.appendChild(document.createTextNode(texto));
+      return div.innerHTML;
+    }
+
+    function escaparAtributo(texto) {
+      if (!texto) return "";
+      return texto.replace(/&/g, "&amp;")
+                  .replace(/"/g, "&quot;")
+                  .replace(/'/g, "&#39;")
+                  .replace(/</g, "&lt;")
+                  .replace(/>/g, "&gt;");
+    }
+
+    function formatearImporte(valor) {
+      if (valor === null || valor === undefined || valor === "") return "-";
+      var numero = parseFloat(valor);
+      if (isNaN(numero)) return escaparHtml(String(valor));
+      return numero.toFixed(2) + " EUR";
+    }
+  </script>
+
+</body>
+</html>

@@ -1,12 +1,14 @@
 {
   "expo": {
-    "name": "peluqueria-raul-app",
+    "name": "Barbería Raúl",
     "slug": "peluqueria-raul-app",
+    "scheme": "peluqueria-raul-app",
+    "owner": "noelpatata",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
-    "newArchEnabled": true,
+    "newArchEnabled": false,
     "splash": {
       "image": "./assets/splash-icon.png",
       "resizeMode": "contain",
@@ -16,15 +18,27 @@
       "supportsTablet": true
     },
     "android": {
+      "package": "com.barberiaderaul.app",
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#ffffff"
       },
-      "edgeToEdgeEnabled": true,
-      "predictiveBackGestureEnabled": false
+      "edgeToEdgeEnabled": false,
+      "predictiveBackGestureEnabled": false,
+      "googleServicesFile": "./google-services.json"
     },
     "web": {
       "favicon": "./assets/favicon.png"
+    },
+    "plugins": [
+      "expo-web-browser",
+      "@react-native-firebase/app",
+      "@react-native-firebase/messaging"
+    ],
+    "extra": {
+      "eas": {
+        "projectId": "d0b52a0b-52a7-4e13-9f0b-5f7c2453e187"
+      }
     }
   }
 }
