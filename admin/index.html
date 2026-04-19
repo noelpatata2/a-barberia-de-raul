@@ -681,7 +681,7 @@
   </div>
 
   <input type="hidden" id="urlApi"
-    value="https://script.google.com/macros/s/AKfycbz6-hCVDydSAYxColbHbYN1gF3Ha-cefdc9wM8hGteFPJXE27ZD9aPv2b4ygZlza4eeSw/exec">
+    value="https://script.google.com/macros/s/AKfycbx0qEiQqdmYyefZTWwWxfVGwoQ7tjBZurICAd8eed4KQ24M-6BCqJtecoPkDKvxDOR31g/exec">
   <div id="puntoEstado" style="display:none;"></div>
   <span id="textoEstado" style="display:none;"></span>
 
@@ -1001,7 +1001,7 @@
             elemento.parentNode.removeChild(elemento);
           }
         }, 300);
-      }, 3000);
+      }, 4000);
     }
 
     // ============================================================
@@ -1421,8 +1421,9 @@
           html += '    </div>';
           html += '    <div id="slotsReasig' + solicitude.indice + '" style="margin-top:8px;"></div>';
           html += '  </div>';
+          html += '  <div id="slotSeleccionado' + solicitude.indice + '" style="margin-top:10px;padding:10px;background:rgba(139,105,20,0.08);border:2px solid var(--cor-primaria);border-radius:8px;display:none;font-size:0.85rem;font-weight:600;color:var(--cor-primaria);"></div>';
           html += '  <div class="grupo-botons">';
-          html += '    <button class="boton boton-aprobar" onclick="procesarReasignacion(' + solicitude.indice + ', \'Aprobada\', this)">Aprobar</button>';
+          html += '    <button class="boton boton-aprobar" id="botonAprobarReasig' + solicitude.indice + '" onclick="procesarReasignacion(' + solicitude.indice + ', \'Aprobada\', this)" disabled style="opacity:0.5;">Aprobar (selecciona un slot)</button>';
           html += '    <button class="boton boton-denegar" onclick="procesarReasignacion(' + solicitude.indice + ', \'Denegada\', this)">Denegar</button>';
           html += '  </div>';
 
@@ -1519,7 +1520,11 @@
             var borde = esLibre ? (coincidePref ? "1px solid rgba(61,139,55,0.4)" : "1px solid var(--cor-borde)") : "1px solid var(--cor-borde)";
             var estilo = 'padding:6px 12px;border-radius:6px;font-size:0.8rem;font-weight:500;color:' + cor + ';background:' + fondo + ';border:' + borde + ';' + (esLibre ? '' : 'text-decoration:line-through;opacity:0.5;');
 
-            html += '<span style="' + estilo + '">' + escaparHtml(slot.hora) + (coincidePref && esLibre ? ' ★' : '') + '</span>';
+            if (esLibre) {
+              html += '<span style="' + estilo + 'cursor:pointer;" onclick="seleccionarSlot(' + indice + ',\'' + escaparAtributo(fechaFormateada) + '\',\'' + escaparAtributo(slot.hora) + '\',this)">' + escaparHtml(slot.hora) + (coincidePref ? ' ★' : '') + '</span>';
+            } else {
+              html += '<span style="' + estilo + '">' + escaparHtml(slot.hora) + '</span>';
+            }
 
             if (esLibre && coincidePref && !recomendado) {
               recomendado = slot.hora;
@@ -1546,6 +1551,33 @@
         .catch(function() {
           slotsDiv.innerHTML = '<span style="color:var(--cor-erro);font-size:0.85rem;">Erro ao cargar slots</span>';
         });
+    }
+
+    function seleccionarSlot(indice, fecha, hora, elemento) {
+      // Gardar seleccion
+      window['slotSeleccionado_' + indice] = { fecha: fecha, hora: hora };
+
+      // Resaltar o slot seleccionado
+      var parent = elemento.parentNode;
+      var spans = parent.querySelectorAll('span');
+      spans.forEach(function(s) { s.style.outline = 'none'; });
+      elemento.style.outline = '3px solid var(--cor-primaria)';
+      elemento.style.outlineOffset = '2px';
+
+      // Mostrar seleccion
+      var selDiv = document.getElementById('slotSeleccionado' + indice);
+      if (selDiv) {
+        selDiv.style.display = 'block';
+        selDiv.innerHTML = 'Slot seleccionado: ' + escaparHtml(fecha) + ' as ' + escaparHtml(hora);
+      }
+
+      // Activar boton aprobar
+      var botonAprobar = document.getElementById('botonAprobarReasig' + indice);
+      if (botonAprobar) {
+        botonAprobar.disabled = false;
+        botonAprobar.style.opacity = '1';
+        botonAprobar.textContent = 'Aprobar (' + fecha + ' ' + hora + ')';
+      }
     }
 
     function navegarDiaReasig(indice, direccion) {
@@ -1619,6 +1651,15 @@
     }
 
     function procesarReasignacion(indice, novoEstado, botonPulsado) {
+      // Se aproba, necesita un slot seleccionado
+      if (novoEstado === 'Aprobada') {
+        var slotData = window['slotSeleccionado_' + indice];
+        if (!slotData) {
+          mostrarNotificacion("Selecciona un slot libre antes de aprobar", "erro");
+          return;
+        }
+      }
+
       var grupoBotons = botonPulsado.parentNode;
       var botons = grupoBotons.querySelectorAll(".boton");
       botons.forEach(function (b) { b.disabled = true; });
@@ -1626,10 +1667,13 @@
       var textoOrixinal = botonPulsado.textContent;
       botonPulsado.textContent = "Procesando...";
 
-      peticionPost("actualizar_reasignacion", {
-        indice: indice,
-        estado: novoEstado
-      })
+      var datos = { indice: indice, estado: novoEstado };
+      if (novoEstado === 'Aprobada' && window['slotSeleccionado_' + indice]) {
+        datos.nuevaFecha = window['slotSeleccionado_' + indice].fecha;
+        datos.nuevaHora = window['slotSeleccionado_' + indice].hora;
+      }
+
+      peticionPost("actualizar_reasignacion", datos)
         .then(function (resultado) {
           if (resultado.exito) {
             var textoEstado = novoEstado === "Aprobada" ? "aprobada" : "denegada";

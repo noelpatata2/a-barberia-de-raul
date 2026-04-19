@@ -679,6 +679,38 @@ function eliminarCitaDeLaHoja(cliente, fechaCita, horaCita) {
 }
 
 // ============================================================
+// LIBERAR CITA DA HOJA (POÑER "Libre" EN VEZ DE BORRAR)
+// Mesma loxica que eliminarCitaDeLaHoja pero sen borrar a fila
+// ============================================================
+function liberarCitaDaHoja(cliente, fechaCita, horaCita) {
+  var hoja = obtenerHoja(PESTANA_CITAS);
+
+  if (!hoja) return;
+
+  var datos = hoja.getDataRange().getValues();
+  var horaBuscada = formatearValorHora(horaCita);
+  var clienteBuscado = cliente.toString().trim().toLowerCase();
+
+  // Buscar por cliente + hora entre citas futuras
+  var hoxe = new Date();
+  hoxe.setHours(0, 0, 0, 0);
+
+  for (var i = 1; i < datos.length; i++) {
+    var clienteFila = datos[i][3] ? datos[i][3].toString().trim().toLowerCase() : "";
+    var horaFila = formatearValorHora(datos[i][2]);
+
+    if (clienteFila === clienteBuscado && horaFila === horaBuscada) {
+      var fechaFila = parsearFecha(datos[i][0]);
+      if (fechaFila && fechaFila >= hoxe) {
+        hoja.getRange(i + 1, 4).setValue("Libre");
+        hoja.getRange(i + 1, 5).setValue("");
+        return;
+      }
+    }
+  }
+}
+
+// ============================================================
 // OBTENER TODOS LOS CLIENTES (ADMIN)
 // ============================================================
 function obtenerClientes() {
@@ -1106,10 +1138,55 @@ function actualizarReasignacion(cuerpo) {
     return { exito: false, mensaje: "Non se atopou a folla de reasignacions" };
   }
 
-  var datosSolicitude = hoja.getRange(indice, 1, 1, 8).getValues()[0];
-  var nomeCliente = datosSolicitude[0] ? datosSolicitude[0].toString().trim() : "";
+  var datosSolicitude = hoja.getRange(indice, 1, 1, 8).getDisplayValues()[0];
+  var nomeCliente = datosSolicitude[0] ? datosSolicitude[0].trim() : "";
+  var fechaCitaOrixinal = datosSolicitude[1] ? datosSolicitude[1].trim() : "";
+  var horaCitaOrixinal = datosSolicitude[2] ? datosSolicitude[2].trim() : "";
+  var servizoCita = datosSolicitude[3] ? datosSolicitude[3].trim() : "";
 
   hoja.getRange(indice, 8).setValue(nuevoEstado);
+
+  // Se se aproba, mover a cita ao novo slot
+  if (nuevoEstado === "Aprobada" && cuerpo.nuevaFecha && cuerpo.nuevaHora) {
+    var hojaCitas = obtenerHoja(PESTANA_CITAS);
+    if (hojaCitas) {
+      // Liberar a cita orixinal usando getDisplayValues para evitar problemas de timezone
+      var hojaCitasLib = obtenerHoja(PESTANA_CITAS);
+      if (hojaCitasLib) {
+        var displayVals = hojaCitasLib.getDataRange().getDisplayValues();
+        for (var il = 1; il < displayVals.length; il++) {
+          var clDisplay = displayVals[il][3] ? displayVals[il][3].trim() : "";
+          var horaDisplay = displayVals[il][2] ? displayVals[il][2].trim() : "";
+          if (clDisplay.toLowerCase() === nomeCliente.toLowerCase() && horaDisplay === horaCitaOrixinal) {
+            hojaCitasLib.getRange(il + 1, 4).setValue("Libre");
+            hojaCitasLib.getRange(il + 1, 5).setValue("");
+            break;
+          }
+        }
+      }
+
+      // Asignar o novo slot
+      datosCitas = hojaCitas.getDataRange().getValues();
+      var nuevaFecha = cuerpo.nuevaFecha;
+      var nuevaHora = cuerpo.nuevaHora;
+      var filaAtopada = -1;
+
+      for (var j = 1; j < datosCitas.length; j++) {
+        var fechaFila = formatearValorFecha(datosCitas[j][0]);
+        var horaFilaJ = formatearValorHora(datosCitas[j][2]);
+        var clienteFilaJ = datosCitas[j][3] ? datosCitas[j][3].toString().trim().toLowerCase() : "";
+        if (fechaFila === nuevaFecha && horaFilaJ === nuevaHora && (clienteFilaJ === "libre" || clienteFilaJ === "")) {
+          filaAtopada = j + 1;
+          break;
+        }
+      }
+
+      if (filaAtopada > 0) {
+        hojaCitas.getRange(filaAtopada, 4).setValue(nomeCliente);
+        hojaCitas.getRange(filaAtopada, 5).setValue(servizoCita);
+      }
+    }
+  }
 
   // Enviar notificacion push ao cliente
   try {
@@ -1508,22 +1585,20 @@ function parsearFecha(valorFecha) {
 // Formatea un valor de hora (Date o string) a formato "HH:MM"
 function formatearValorHora(valor) {
   if (valor instanceof Date) {
-    var horas = ("0" + valor.getHours()).slice(-2);
-    var minutos = ("0" + valor.getMinutes()).slice(-2);
-    return horas + ":" + minutos;
+    // Usar Utilities.formatDate para respectar a zona horaria do spreadsheet
+    try {
+      return Utilities.formatDate(valor, "Europe/Madrid", "HH:mm");
+    } catch (e) {
+      var horas = ("0" + valor.getHours()).slice(-2);
+      var minutos = ("0" + valor.getMinutes()).slice(-2);
+      return horas + ":" + minutos;
+    }
   }
   if (valor) {
     var texto = valor.toString().trim();
     // Si ya tiene formato HH:MM, devolver tal cual
     if (/^\d{1,2}:\d{2}$/.test(texto)) {
       return texto.length === 4 ? "0" + texto : texto;
-    }
-    // Intentar parsear como Date (por si viene serializado como ISO string)
-    var fechaParseada = new Date(texto);
-    if (!isNaN(fechaParseada.getTime())) {
-      var horas = ("0" + fechaParseada.getHours()).slice(-2);
-      var minutos = ("0" + fechaParseada.getMinutes()).slice(-2);
-      return horas + ":" + minutos;
     }
     return texto;
   }
