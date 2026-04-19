@@ -11,7 +11,7 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { Colores } from '../constantes/colores';
-import { obtenerProximasCitas, solicitarReasignacion } from '../servicios/api';
+import { obtenerProximasCitas, solicitarReasignacion, obtenerMisCancelaciones, obtenerMisReasignaciones } from '../servicios/api';
 import { Cita } from '../tipos';
 
 // Motivos de reasignacion disponibles
@@ -78,9 +78,26 @@ export default function ReasignarCitaScreen({ navigation }: any) {
   async function cargarCitas() {
     try {
       setCargando(true);
-      const resposta = await obtenerProximasCitas();
-      if (resposta.exito) {
-        setCitas(resposta.citas.slice(0, 3));
+      const [respCitas, respCancel, respReasig] = await Promise.all([
+        obtenerProximasCitas(),
+        obtenerMisCancelaciones(),
+        obtenerMisReasignaciones(),
+      ]);
+      if (respCitas.exito) {
+        const cancelPendentes = new Set(
+          (respCancel.exito ? respCancel.cancelaciones : [])
+            .filter((c: any) => c.estado === 'Pendiente')
+            .map((c: any) => `${c.fecha}-${c.hora}`)
+        );
+        const reasigPendentes = new Set(
+          (respReasig.exito ? respReasig.reasignaciones : [])
+            .filter((r: any) => r.estado === 'Pendente')
+            .map((r: any) => `${r.fecha}-${r.hora}`)
+        );
+        const citasDisponibles = respCitas.citas.filter(
+          (c: Cita) => !cancelPendentes.has(`${c.fecha}-${c.hora}`) && !reasigPendentes.has(`${c.fecha}-${c.hora}`)
+        );
+        setCitas(citasDisponibles.slice(0, 3));
       }
     } catch (erro) {
       console.error('Erro ao cargar citas:', erro);

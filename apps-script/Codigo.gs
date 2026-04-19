@@ -12,6 +12,7 @@ var PESTANA_CITAS = "Citas Peluqueria";
 var PESTANA_CLIENTES = "Clientes";
 var PESTANA_CANCELACIONES = "Solicitudes Cancelacion";
 var PESTANA_CITAS_EXTRA = "Solicitudes Cita Extra";
+var PESTANA_REASIGNACIONES = "Solicitudes Reasignacion";
 var PESTANA_PREFERENCIAS = "Preferencias Clientes";
 
 // ============================================================
@@ -49,12 +50,27 @@ function doGet(e) {
       case "obtener_mis_cancelaciones":
         return crearRespuesta(obtenerMisCancelaciones(e));
 
+      case "obtener_mis_reasignaciones":
+        return crearRespuesta(obtenerMisReasignaciones(e));
+
       case "obtener_citas_por_fecha":
         return crearRespuesta(obtenerCitasPorFecha(e));
 
       case "obtener_citas_extra":
         if (!verificarAdmin(e, null)) return crearRespuesta({ error: true, mensaje: "Acceso non autorizado" });
         return crearRespuesta(obtenerCitasExtra());
+
+      case "obtener_reasignaciones":
+        if (!verificarAdmin(e, null)) return crearRespuesta({ error: true, mensaje: "Acceso non autorizado" });
+        return crearRespuesta(obtenerReasignaciones());
+
+      case "obtener_preferencias_cliente":
+        if (!verificarAdmin(e, null)) return crearRespuesta({ error: true, mensaje: "Acceso non autorizado" });
+        return crearRespuesta(obtenerPreferenciasCliente(e));
+
+      case "obtener_slots_fecha":
+        if (!verificarAdmin(e, null)) return crearRespuesta({ error: true, mensaje: "Acceso non autorizado" });
+        return crearRespuesta(obtenerSlotsFecha(e));
 
       default:
         return crearRespuesta({ error: true, mensaje: "Accion no reconocida" });
@@ -97,6 +113,13 @@ function doPost(e) {
 
       case "enviar_preferencias":
         return crearRespuesta(enviarPreferencias(e, cuerpo));
+
+      case "solicitar_reasignacion":
+        return crearRespuesta(solicitarReasignacion(e, cuerpo));
+
+      case "actualizar_reasignacion":
+        if (!verificarAdmin(e, cuerpo)) return crearRespuesta({ error: true, mensaje: "Acceso non autorizado" });
+        return crearRespuesta(actualizarReasignacion(cuerpo));
 
       default:
         return crearRespuesta({ error: true, mensaje: "Accion no reconocida" });
@@ -538,7 +561,7 @@ function enviarNotificacionPushCliente(nombreCliente, estado) {
       return;
     }
 
-    var projectId = "barberia-raul-74c71";
+    var projectId = "app-barberia-20e9d";
     var url = "https://fcm.googleapis.com/v1/projects/" + projectId + "/messages:send";
 
     var payload = {
@@ -906,7 +929,7 @@ function actualizarCitaExtra(cuerpo) {
 
       var accessToken = obterAccessTokenFCM();
       if (accessToken) {
-        var projectId = "barberia-raul-74c71";
+        var projectId = "app-barberia-20e9d";
         var url = "https://fcm.googleapis.com/v1/projects/" + projectId + "/messages:send";
 
         var payload = {
@@ -944,6 +967,210 @@ function actualizarCitaExtra(cuerpo) {
   }
 
   return { exito: true, mensaje: "Solicitude de cita extra actualizada a: " + nuevoEstado };
+}
+
+// ============================================================
+// OBTENER MIS REASIGNACIONES (CLIENTE)
+// Devolve as reasignacións do cliente autenticado
+// ============================================================
+function obtenerMisReasignaciones(e) {
+  var email = obtenerEmailDelToken(e);
+
+  if (!email) {
+    return { exito: false, mensaje: "Token non valido" };
+  }
+
+  var nombreCliente = obtenerNombreClientePorEmail(email);
+
+  if (!nombreCliente) {
+    return { exito: false, mensaje: "Cliente non atopado" };
+  }
+
+  var hoja = obtenerHoja(PESTANA_REASIGNACIONES);
+
+  if (!hoja) {
+    return { exito: true, reasignaciones: [] };
+  }
+
+  var datos = hoja.getDataRange().getValues();
+  var reasignaciones = [];
+
+  for (var i = 1; i < datos.length; i++) {
+    var clienteFila = datos[i][0] ? datos[i][0].toString().trim() : "";
+
+    if (clienteFila.toLowerCase() === nombreCliente.toLowerCase()) {
+      reasignaciones.push({
+        fecha: formatearValorFecha(datos[i][1]),
+        hora: formatearValorHora(datos[i][2]),
+        servicio: datos[i][3] ? datos[i][3].toString() : "",
+        motivo: datos[i][4] ? datos[i][4].toString() : "",
+        estado: datos[i][7] ? datos[i][7].toString() : "Pendente",
+        fechaSolicitud: datos[i][6] ? datos[i][6].toString() : ""
+      });
+    }
+  }
+
+  return { exito: true, reasignaciones: reasignaciones };
+}
+
+// ============================================================
+// SOLICITAR REASIGNACION DUNHA CITA
+// O cliente pide que o barbeiro lle cambie a data/hora
+// ============================================================
+function solicitarReasignacion(e, cuerpo) {
+  if (cuerpo.token) {
+    e.parameter = e.parameter || {};
+    e.parameter.token = cuerpo.token;
+  }
+  var email = obtenerEmailDelToken(e);
+
+  if (!email) {
+    return { exito: false, mensaje: "Token non valido" };
+  }
+
+  var nombreCliente = obtenerNombreClientePorEmail(email);
+
+  if (!nombreCliente) {
+    return { exito: false, mensaje: "Cliente non atopado" };
+  }
+
+  var hoja = obtenerOCrearHojaReasignaciones();
+
+  var ahora = new Date();
+  var fechaSolicitud = Utilities.formatDate(ahora, Session.getScriptTimeZone(), "dd/MM/yyyy HH:mm");
+
+  hoja.appendRow([
+    sanitizarParaCelda(nombreCliente),
+    sanitizarParaCelda(cuerpo.fechaCita || ""),
+    sanitizarParaCelda(cuerpo.horaCita || ""),
+    sanitizarParaCelda(cuerpo.servicio || ""),
+    sanitizarParaCelda(cuerpo.motivo || ""),
+    sanitizarParaCelda(cuerpo.comentario || ""),
+    sanitizarParaCelda(fechaSolicitud),
+    "Pendente"
+  ]);
+
+  return { exito: true, mensaje: "Solicitude de reasignacion enviada" };
+}
+
+// ============================================================
+// OBTER TODAS AS SOLICITUDES DE REASIGNACION (ADMIN)
+// ============================================================
+function obtenerReasignaciones() {
+  var hoja = obtenerHoja(PESTANA_REASIGNACIONES);
+
+  if (!hoja) {
+    return { exito: true, reasignaciones: [] };
+  }
+
+  var datos = hoja.getDataRange().getValues();
+  var reasignaciones = [];
+
+  for (var i = 1; i < datos.length; i++) {
+    if (datos[i][0] && datos[i][0].toString().trim() !== "") {
+      reasignaciones.push({
+        indice: i + 1,
+        cliente: datos[i][0] ? datos[i][0].toString() : "",
+        fechaCita: formatearValorFecha(datos[i][1]),
+        horaCita: formatearValorHora(datos[i][2]),
+        servicio: datos[i][3] ? datos[i][3].toString() : "",
+        motivo: datos[i][4] ? datos[i][4].toString() : "",
+        comentario: datos[i][5] ? datos[i][5].toString() : "",
+        fechaSolicitude: datos[i][6] ? datos[i][6].toString() : "",
+        estado: datos[i][7] ? datos[i][7].toString() : "Pendente"
+      });
+    }
+  }
+
+  return { exito: true, reasignaciones: reasignaciones };
+}
+
+// ============================================================
+// ACTUALIZAR ESTADO DUNHA SOLICITUDE DE REASIGNACION (ADMIN)
+// ============================================================
+function actualizarReasignacion(cuerpo) {
+  var indice = cuerpo.indice;
+  var nuevoEstado = cuerpo.estado;
+
+  if (!indice || !nuevoEstado) {
+    return { exito: false, mensaje: "Faltan parametros: indice e estado son obrigatorios" };
+  }
+
+  if (nuevoEstado !== "Aprobada" && nuevoEstado !== "Denegada") {
+    return { exito: false, mensaje: "O estado debe ser 'Aprobada' ou 'Denegada'" };
+  }
+
+  var hoja = obtenerHoja(PESTANA_REASIGNACIONES);
+
+  if (!hoja) {
+    return { exito: false, mensaje: "Non se atopou a folla de reasignacions" };
+  }
+
+  var datosSolicitude = hoja.getRange(indice, 1, 1, 8).getValues()[0];
+  var nomeCliente = datosSolicitude[0] ? datosSolicitude[0].toString().trim() : "";
+
+  hoja.getRange(indice, 8).setValue(nuevoEstado);
+
+  // Enviar notificacion push ao cliente
+  try {
+    var tokenPush = obtenerTokenPushCliente(nomeCliente);
+    if (tokenPush) {
+      var estadoTexto = nuevoEstado.toLowerCase();
+      var mensaxe = "A tua solicitude de reasignacion foi " + estadoTexto;
+
+      var accessToken = obterAccessTokenFCM();
+      if (accessToken) {
+        var projectId = "app-barberia-20e9d";
+        var url = "https://fcm.googleapis.com/v1/projects/" + projectId + "/messages:send";
+
+        var payload = {
+          message: {
+            token: tokenPush,
+            notification: {
+              title: "Peluqueria Raul",
+              body: mensaxe
+            },
+            android: {
+              priority: "high",
+              notification: {
+                sound: "default",
+                channel_id: "default"
+              }
+            },
+            data: {
+              tipo: "reasignacion",
+              estado: nuevoEstado
+            }
+          }
+        };
+
+        UrlFetchApp.fetch(url, {
+          method: "post",
+          contentType: "application/json",
+          headers: { "Authorization": "Bearer " + accessToken },
+          payload: JSON.stringify(payload),
+          muteHttpExceptions: true
+        });
+      }
+    }
+  } catch (error) {
+    Logger.log("Erro ao enviar notificacion push de reasignacion: " + error.message);
+  }
+
+  return { exito: true, mensaje: "Solicitude de reasignacion actualizada a: " + nuevoEstado };
+}
+
+function obtenerOCrearHojaReasignaciones() {
+  var libroHojas = SpreadsheetApp.openById(obtenerIdHoja());
+  var hoja = libroHojas.getSheetByName(PESTANA_REASIGNACIONES);
+
+  if (!hoja) {
+    hoja = libroHojas.insertSheet(PESTANA_REASIGNACIONES);
+    hoja.appendRow(["Cliente", "Fecha cita", "Hora cita", "Servicio", "Motivo", "Comentario", "Fecha solicitud", "Estado"]);
+    hoja.getRange(1, 1, 1, 8).setFontWeight("bold");
+  }
+
+  return hoja;
 }
 
 // ============================================================
@@ -1050,6 +1277,69 @@ function obtenerOCrearHojaPreferencias() {
   }
 
   return hoja;
+}
+
+// ============================================================
+// OBTER PREFERENCIAS DUN CLIENTE POR NOME (ADMIN)
+// ============================================================
+function obtenerPreferenciasCliente(e) {
+  var nomeCliente = e.parameter.cliente;
+  if (!nomeCliente) return { exito: true, preferencias: null };
+
+  var hoja = obtenerHoja(PESTANA_PREFERENCIAS);
+  if (!hoja) return { exito: true, preferencias: null };
+
+  var datos = hoja.getDataRange().getValues();
+  for (var i = 1; i < datos.length; i++) {
+    var clienteFila = datos[i][0] ? datos[i][0].toString().trim().toLowerCase() : "";
+    if (clienteFila === nomeCliente.toLowerCase()) {
+      return {
+        exito: true,
+        preferencias: {
+          servizos: datos[i][2] ? datos[i][2].toString() : "",
+          intervalo: datos[i][3] ? datos[i][3].toString() : "",
+          luns: datos[i][4] ? datos[i][4].toString() : "",
+          martes: datos[i][5] ? datos[i][5].toString() : "",
+          mercores: datos[i][6] ? datos[i][6].toString() : "",
+          xoves: datos[i][7] ? datos[i][7].toString() : "",
+          venres: datos[i][8] ? datos[i][8].toString() : "",
+          sabado: datos[i][9] ? datos[i][9].toString() : ""
+        }
+      };
+    }
+  }
+  return { exito: true, preferencias: null };
+}
+
+// ============================================================
+// OBTER SLOTS DISPOÑIBLES DUNHA DATA (ADMIN)
+// Devolve todos os slots con estado libre/ocupado
+// ============================================================
+function obtenerSlotsFecha(e) {
+  var fecha = e.parameter.fecha;
+  if (!fecha) return { exito: false, mensaje: "Falta o parametro: fecha" };
+
+  var hoja = obtenerHoja(PESTANA_CITAS);
+  if (!hoja) return { exito: true, slots: [] };
+
+  var datos = hoja.getDataRange().getValues();
+  var slots = [];
+
+  for (var i = 1; i < datos.length; i++) {
+    if (!datos[i][0]) continue;
+    var fechaFila = formatearValorFecha(datos[i][0]);
+    if (fechaFila === fecha) {
+      var cliente = datos[i][3] ? datos[i][3].toString().trim() : "";
+      var esLibre = cliente.toLowerCase() === "libre" || cliente === "";
+      slots.push({
+        hora: formatearValorHora(datos[i][2]),
+        estado: esLibre ? "libre" : "ocupado",
+        cliente: esLibre ? "" : cliente
+      });
+    }
+  }
+
+  return { exito: true, slots: slots };
 }
 
 // ============================================================
@@ -1312,7 +1602,7 @@ function enviarRecordatoriosSemanais() {
           var accessToken = obterAccessTokenFCM();
           if (!accessToken) continue;
 
-          var projectId = "barberia-raul-74c71";
+          var projectId = "app-barberia-20e9d";
           var url = "https://fcm.googleapis.com/v1/projects/" + projectId + "/messages:send";
 
           var payload = {

@@ -681,7 +681,7 @@
   </div>
 
   <input type="hidden" id="urlApi"
-    value="https://script.google.com/macros/s/AKfycbx3rcU-i_k8KKYmoaxiSOZvKmIli_au1N1HFBvbRu0tveAPLNP6h4yOr-eQCU8_Ljgg/exec">
+    value="https://script.google.com/macros/s/AKfycbz6-hCVDydSAYxColbHbYN1gF3Ha-cefdc9wM8hGteFPJXE27ZD9aPv2b4ygZlza4eeSw/exec">
   <div id="puntoEstado" style="display:none;"></div>
   <span id="textoEstado" style="display:none;"></span>
 
@@ -697,8 +697,12 @@
       Citas Extra
       <span class="contador-pestana" id="contadorCitasExtra" style="display:none;">0</span>
     </button>
+    <button class="boton-pestana" data-pestana="reasignacions" onclick="cambiarPestana('reasignacions')">
+      Reasignacions
+      <span class="contador-pestana" id="contadorReasignacions" style="display:none;">0</span>
+    </button>
     <button class="boton-pestana" data-pestana="citas" onclick="cambiarPestana('citas')">
-      Proximas Citas
+      Citas do dia
       <span class="contador-pestana" id="contadorCitas" style="display:none;">0</span>
     </button>
     <button class="boton-pestana" data-pestana="clientes" onclick="cambiarPestana('clientes')">
@@ -745,11 +749,27 @@
     </section>
 
     <!-- ============================================================
+         Seccion: Reasignacions
+         ============================================================ -->
+    <section id="seccionReasignacions" class="panel-seccion">
+      <div class="barra-ferramentas">
+        <h2>Solicitudes de Reasignacion</h2>
+        <button class="boton boton-secundario" onclick="cargarReasignacions()">Actualizar</button>
+      </div>
+      <div id="contidoReasignacions">
+        <div class="indicador-carga">
+          <div class="spinner"></div>
+          <p>Cargando solicitudes...</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============================================================
          Seccion: Proximas Citas
          ============================================================ -->
     <section id="seccionCitas" class="panel-seccion">
       <div class="barra-ferramentas">
-        <h2>Proximas Citas</h2>
+        <h2>Citas do dia</h2>
         <button class="boton boton-secundario" onclick="cargarCitas()">Actualizar</button>
       </div>
       <div id="contidoCitas">
@@ -801,6 +821,7 @@
     var pestanaActual = "cancelacions";
     var datosCancelacions = [];
     var datosCitasExtra = [];
+    var datosReasignacions = [];
     var datosCitas = [];
     var datosClientes = [];
     var temporizadorActualizacion = null;
@@ -954,6 +975,7 @@
       var seccionsMapa = {
         "cancelacions": "seccionCancelacions",
         "citasExtra": "seccionCitasExtra",
+        "reasignacions": "seccionReasignacions",
         "citas": "seccionCitas",
         "clientes": "seccionClientes"
       };
@@ -1060,6 +1082,7 @@
     function cargarTodosOsDatos() {
       cargarCancelacions();
       cargarCitasExtra();
+      cargarReasignacions();
       cargarCitas();
       cargarClientes();
     }
@@ -1072,7 +1095,12 @@
         clearInterval(temporizadorActualizacion);
       }
       temporizadorActualizacion = setInterval(function () {
-        cargarTodosOsDatos();
+        // So actualizar pestanas que NON son a activa, para non borrar o traballo do usuario
+        if (pestanaActual !== "cancelacions") cargarCancelacions();
+        if (pestanaActual !== "citasExtra") cargarCitasExtra();
+        if (pestanaActual !== "reasignacions") cargarReasignacions();
+        if (pestanaActual !== "citas") cargarCitas();
+        if (pestanaActual !== "clientes") cargarClientes();
       }, 30000);
     }
 
@@ -1137,7 +1165,7 @@
         html += '    <div class="tarxeta-campo"><span class="etiqueta">Data da cita</span><span class="valor">' + escaparHtml(solicitude.fechaCita) + '</span></div>';
         html += '    <div class="tarxeta-campo"><span class="etiqueta">Hora</span><span class="valor">' + escaparHtml(solicitude.horaCita) + '</span></div>';
         html += '    <div class="tarxeta-campo"><span class="etiqueta">Servizo</span><span class="valor">' + escaparHtml(solicitude.servicio) + '</span></div>';
-        html += '    <div class="tarxeta-campo"><span class="etiqueta">Data solicitude</span><span class="valor">' + escaparHtml(solicitude.fechaSolicitud) + '</span></div>';
+        html += '    <div class="tarxeta-campo"><span class="etiqueta">Data solicitude</span><span class="valor">' + formatearDataSolicitude(solicitude.fechaSolicitud) + '</span></div>';
         html += '  </div>';
 
         if (ePendente) {
@@ -1247,7 +1275,7 @@
         html += '    <div class="tarxeta-campo"><span class="etiqueta">Servizo</span><span class="valor">' + escaparHtml(solicitude.servizo) + '</span></div>';
         html += '    <div class="tarxeta-campo"><span class="etiqueta">Data preferida</span><span class="valor">' + escaparHtml(solicitude.fechaPreferida) + '</span></div>';
         html += '    <div class="tarxeta-campo"><span class="etiqueta">Hora preferida</span><span class="valor">' + escaparHtml(solicitude.horaPreferida) + '</span></div>';
-        html += '    <div class="tarxeta-campo"><span class="etiqueta">Data solicitude</span><span class="valor">' + escaparHtml(solicitude.fechaSolicitude) + '</span></div>';
+        html += '    <div class="tarxeta-campo"><span class="etiqueta">Data solicitude</span><span class="valor">' + formatearDataSolicitude(solicitude.fechaSolicitude) + '</span></div>';
 
         if (solicitude.nota) {
           html += '    <div class="tarxeta-campo" style="grid-column: 1 / -1;"><span class="etiqueta">Nota</span><span class="valor">' + escaparHtml(solicitude.nota) + '</span></div>';
@@ -1302,6 +1330,325 @@
     }
 
     // ============================================================
+    // REASIGNACIONS
+    // ============================================================
+    function cargarReasignacions() {
+      peticionGet("obtener_reasignaciones")
+        .then(function (resultado) {
+          if (resultado.exito) {
+            datosReasignacions = resultado.reasignaciones || [];
+            renderizarReasignacions();
+          } else {
+            mostrarNotificacion("Erro ao cargar reasignacions: " + resultado.mensaje, "erro");
+          }
+        })
+        .catch(function (erro) {
+          document.getElementById("contidoReasignacions").innerHTML =
+            '<div class="mensaxe-baleira"><p>Erro ao conectar co servidor</p><p>' + erro.message + '</p></div>';
+        });
+    }
+
+    function renderizarReasignacions() {
+      var contedor = document.getElementById("contidoReasignacions");
+
+      var pendentes = datosReasignacions.filter(function (r) {
+        return r.estado === "Pendente";
+      });
+
+      var contadorElemento = document.getElementById("contadorReasignacions");
+      if (pendentes.length > 0) {
+        contadorElemento.textContent = pendentes.length;
+        contadorElemento.style.display = "inline-block";
+      } else {
+        contadorElemento.style.display = "none";
+      }
+
+      if (datosReasignacions.length === 0) {
+        contedor.innerHTML = '<div class="mensaxe-baleira"><p>Non hai solicitudes de reasignacion</p></div>';
+        return;
+      }
+
+      var ordenadas = datosReasignacions.slice().sort(function (a, b) {
+        if (a.estado === "Pendente" && b.estado !== "Pendente") return -1;
+        if (a.estado !== "Pendente" && b.estado === "Pendente") return 1;
+        return 0;
+      });
+
+      var html = "";
+
+      ordenadas.forEach(function (solicitude, idx) {
+        var claseEstado = solicitude.estado === "Pendente" ? "pendente" :
+                          solicitude.estado === "Aprobada" ? "aprobada" : "denegada";
+        var ePendente = solicitude.estado === "Pendente";
+
+        html += '<div class="tarxeta">';
+        html += '  <div class="tarxeta-cabeceira">';
+        html += '    <span class="tarxeta-titulo">' + escaparHtml(solicitude.cliente) + '</span>';
+        html += '    <span class="etiqueta-estado ' + claseEstado + '">' + escaparHtml(solicitude.estado) + '</span>';
+        html += '  </div>';
+        html += '  <div class="tarxeta-corpo">';
+        html += '    <div class="tarxeta-campo"><span class="etiqueta">Data da cita</span><span class="valor">' + escaparHtml(solicitude.fechaCita) + '</span></div>';
+        html += '    <div class="tarxeta-campo"><span class="etiqueta">Hora</span><span class="valor">' + escaparHtml(solicitude.horaCita) + '</span></div>';
+        html += '    <div class="tarxeta-campo"><span class="etiqueta">Servizo</span><span class="valor">' + escaparHtml(solicitude.servicio) + '</span></div>';
+        html += '    <div class="tarxeta-campo"><span class="etiqueta">Motivo</span><span class="valor">' + escaparHtml(solicitude.motivo) + '</span></div>';
+
+        if (solicitude.comentario) {
+          html += '    <div class="tarxeta-campo" style="grid-column: 1 / -1;"><span class="etiqueta">Comentario</span><span class="valor">' + escaparHtml(solicitude.comentario) + '</span></div>';
+        }
+
+        html += '    <div class="tarxeta-campo"><span class="etiqueta">Data solicitude</span><span class="valor">' + formatearDataSolicitude(solicitude.fechaSolicitude) + '</span></div>';
+        html += '  </div>';
+
+        // Preferencias e calendario so para pendentes
+        if (ePendente) {
+          html += '  <div id="prefReasig' + solicitude.indice + '" style="margin-top:12px;padding:12px;background:var(--cor-fondo);border-radius:8px;display:none;">';
+          html += '    <div style="font-size:0.8rem;font-weight:600;color:var(--cor-primaria);margin-bottom:8px;">Preferencias do cliente</div>';
+          html += '    <div id="prefContenido' + solicitude.indice + '" style="font-size:0.85rem;color:var(--cor-texto-gris);">Cargando...</div>';
+          html += '  </div>';
+          html += '  <div id="recomendacion' + solicitude.indice + '" style="margin-top:8px;padding:10px;background:#DFF0D8;border-radius:8px;display:none;font-size:0.85rem;color:#3D8B37;font-weight:500;"></div>';
+          html += '  <div style="margin-top:12px;">';
+          // Partir da data da cita orixinal + 7 dias
+          var partesCita = solicitude.fechaCita.split('/');
+          var dataCita = new Date(parseInt(partesCita[2]), parseInt(partesCita[1])-1, parseInt(partesCita[0]));
+          dataCita.setDate(dataCita.getDate() + 7);
+          var dataMinimaStr = dataCita.getFullYear() + '-' + ('0' + (dataCita.getMonth()+1)).slice(-2) + '-' + ('0' + dataCita.getDate()).slice(-2);
+          html += '    <div style="font-size:0.8rem;font-weight:600;color:var(--cor-texto);margin-bottom:8px;">Buscar slots dispoñibles</div>';
+          html += '    <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;">';
+          html += '      <button class="boton boton-secundario" onclick="navegarDiaReasig(' + solicitude.indice + ',-1)" style="padding:6px 10px;">&#9664;</button>';
+          html += '      <input type="date" id="dateReasig' + solicitude.indice + '" value="' + dataMinimaStr + '" min="' + dataMinimaStr + '" style="padding:8px 12px;border:1px solid var(--cor-borde);border-radius:6px;font-size:0.85rem;" onchange="cargarSlotsReasig(' + solicitude.indice + ')">';
+          html += '      <button class="boton boton-secundario" onclick="navegarDiaReasig(' + solicitude.indice + ',1)" style="padding:6px 10px;">&#9654;</button>';
+          html += '      <button class="boton boton-gardar" onclick="buscarProximoSlotLibre(' + solicitude.indice + ')" style="padding:6px 12px;font-size:0.8rem;">Buscar primeiro libre (1 semana despois)</button>';
+          html += '    </div>';
+          html += '    <div id="slotsReasig' + solicitude.indice + '" style="margin-top:8px;"></div>';
+          html += '  </div>';
+          html += '  <div class="grupo-botons">';
+          html += '    <button class="boton boton-aprobar" onclick="procesarReasignacion(' + solicitude.indice + ', \'Aprobada\', this)">Aprobar</button>';
+          html += '    <button class="boton boton-denegar" onclick="procesarReasignacion(' + solicitude.indice + ', \'Denegada\', this)">Denegar</button>';
+          html += '  </div>';
+
+          // Cargar preferencias automaticamente
+        }
+
+        html += '</div>';
+      });
+
+      contedor.innerHTML = html;
+
+      // Cargar preferencias e slots despois de renderizar
+      ordenadas.forEach(function (solicitude, idx) {
+        if (solicitude.estado === "Pendente") {
+          setTimeout(function() {
+            cargarPreferenciasReasig(solicitude.indice, solicitude.cliente);
+            cargarSlotsReasig(solicitude.indice);
+          }, 200 * (idx + 1));
+        }
+      });
+    }
+
+    function cargarPreferenciasReasig(indice, nomeCliente) {
+      var url = obterUrlApi();
+      var claveAdmin = obterClaveAdmin();
+      fetch(url + "?accion=obtener_preferencias_cliente&admin_key=" + encodeURIComponent(claveAdmin) + "&cliente=" + encodeURIComponent(nomeCliente), { method: "GET", redirect: "follow" })
+        .then(function(r) { return r.json(); })
+        .then(function(datos) {
+          var prefDiv = document.getElementById("prefReasig" + indice);
+          var prefContenido = document.getElementById("prefContenido" + indice);
+          if (!prefDiv || !prefContenido) return;
+
+          if (datos.exito && datos.preferencias) {
+            var p = datos.preferencias;
+            prefDiv.style.display = "block";
+            var html = '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:6px;">';
+            if (p.servizos) html += '<div><span style="color:var(--cor-texto-gris);font-size:0.75rem;display:block;">Servizos</span>' + escaparHtml(p.servizos) + '</div>';
+            if (p.intervalo) html += '<div><span style="color:var(--cor-texto-gris);font-size:0.75rem;display:block;">Intervalo</span>' + escaparHtml(p.intervalo) + '</div>';
+
+            var DIAS = {luns: "Luns", martes: "Martes", mercores: "Mercores", xoves: "Xoves", venres: "Venres", sabado: "Sabado"};
+            var diasDisp = [];
+            Object.keys(DIAS).forEach(function(d) {
+              if (p[d]) diasDisp.push('<div><span style="color:var(--cor-texto-gris);font-size:0.75rem;display:block;">' + DIAS[d] + '</span>' + escaparHtml(p[d]) + '</div>');
+            });
+            html += diasDisp.join('');
+            html += '</div>';
+            prefContenido.innerHTML = html;
+
+            // Gardar preferencias para recomendacion
+            window['pref_' + indice] = p;
+          } else {
+            prefDiv.style.display = "block";
+            prefContenido.innerHTML = '<span style="color:var(--cor-texto-gris);">O cliente non ten preferencias gardadas</span>';
+          }
+        })
+        .catch(function() {});
+    }
+
+    function cargarSlotsReasig(indice) {
+      var dateInput = document.getElementById("dateReasig" + indice);
+      var slotsDiv = document.getElementById("slotsReasig" + indice);
+      if (!dateInput || !slotsDiv || !dateInput.value) return;
+
+      // Converter de yyyy-mm-dd a dd/mm/yyyy
+      var partes = dateInput.value.split("-");
+      var fechaFormateada = partes[2] + "/" + partes[1] + "/" + partes[0];
+
+      slotsDiv.innerHTML = '<span style="color:var(--cor-texto-gris);font-size:0.85rem;">Cargando slots...</span>';
+
+      var url = obterUrlApi();
+      var claveAdmin = obterClaveAdmin();
+      fetch(url + "?accion=obtener_slots_fecha&admin_key=" + encodeURIComponent(claveAdmin) + "&fecha=" + encodeURIComponent(fechaFormateada), { method: "GET", redirect: "follow" })
+        .then(function(r) { return r.json(); })
+        .then(function(datos) {
+          if (!datos.exito || !datos.slots || datos.slots.length === 0) {
+            slotsDiv.innerHTML = '<span style="color:var(--cor-texto-gris);font-size:0.85rem;">Non hai slots para esta data</span>';
+            return;
+          }
+
+          var pref = window['pref_' + indice];
+          var diaSemana = new Date(parseInt(partes[0]), parseInt(partes[1]) - 1, parseInt(partes[2])).getDay();
+          var nomeDias = ['domingo', 'luns', 'martes', 'mercores', 'xoves', 'venres', 'sabado'];
+          var diaKey = nomeDias[diaSemana];
+          var horasPref = pref && pref[diaKey] ? pref[diaKey].split(",").map(function(h) { return h.trim(); }) : [];
+
+          var html = '<div style="display:flex;flex-wrap:wrap;gap:6px;">';
+          var recomendado = null;
+
+          datos.slots.forEach(function(slot) {
+            var esLibre = slot.estado === "libre";
+            var coincidePref = horasPref.length > 0 && horasPref.indexOf(slot.hora) !== -1;
+            var cor = esLibre ? (coincidePref ? "#3D8B37" : "var(--cor-primaria)") : "var(--cor-texto-gris)";
+            var fondo = esLibre ? (coincidePref ? "rgba(61,139,55,0.12)" : "rgba(139,105,20,0.08)") : "rgba(0,0,0,0.04)";
+            var borde = esLibre ? (coincidePref ? "1px solid rgba(61,139,55,0.4)" : "1px solid var(--cor-borde)") : "1px solid var(--cor-borde)";
+            var estilo = 'padding:6px 12px;border-radius:6px;font-size:0.8rem;font-weight:500;color:' + cor + ';background:' + fondo + ';border:' + borde + ';' + (esLibre ? '' : 'text-decoration:line-through;opacity:0.5;');
+
+            html += '<span style="' + estilo + '">' + escaparHtml(slot.hora) + (coincidePref && esLibre ? ' ★' : '') + '</span>';
+
+            if (esLibre && coincidePref && !recomendado) {
+              recomendado = slot.hora;
+            } else if (esLibre && !recomendado && horasPref.length === 0) {
+              recomendado = slot.hora;
+            }
+          });
+
+          html += '</div>';
+          if (horasPref.length > 0) {
+            html += '<div style="margin-top:6px;font-size:0.75rem;color:var(--cor-texto-gris);">★ = coincide coas preferencias do cliente</div>';
+          }
+          slotsDiv.innerHTML = html;
+
+          // Mostrar recomendacion
+          var recomDiv = document.getElementById("recomendacion" + indice);
+          if (recomDiv && recomendado) {
+            recomDiv.style.display = "block";
+            recomDiv.innerHTML = "Recomendacion: " + fechaFormateada + " as " + recomendado + (horasPref.length > 0 ? " (coincide coas preferencias)" : " (primeiro slot libre)");
+          } else if (recomDiv) {
+            recomDiv.style.display = "none";
+          }
+        })
+        .catch(function() {
+          slotsDiv.innerHTML = '<span style="color:var(--cor-erro);font-size:0.85rem;">Erro ao cargar slots</span>';
+        });
+    }
+
+    function navegarDiaReasig(indice, direccion) {
+      var dateInput = document.getElementById("dateReasig" + indice);
+      if (!dateInput || !dateInput.value) return;
+      var data = new Date(dateInput.value);
+      data.setDate(data.getDate() + direccion);
+      // Non permitir datas antes de hoxe
+      var minima = new Date();
+      minima.setHours(0,0,0,0);
+      if (data < minima) return;
+      dateInput.value = data.getFullYear() + '-' + ('0' + (data.getMonth()+1)).slice(-2) + '-' + ('0' + data.getDate()).slice(-2);
+      cargarSlotsReasig(indice);
+    }
+
+    function buscarProximoSlotLibre(indice) {
+      var dateInput = document.getElementById("dateReasig" + indice);
+      var slotsDiv = document.getElementById("slotsReasig" + indice);
+      if (!slotsDiv) return;
+      slotsDiv.innerHTML = '<span style="color:var(--cor-texto-gris);font-size:0.85rem;">Buscando primeiro slot libre...</span>';
+
+      // Partir da data seleccionada no input
+      var dataActual = dateInput && dateInput.value ? new Date(dateInput.value) : new Date();
+      dataActual.setDate(dataActual.getDate() + 1); // empezar polo día seguinte
+      var intentos = 0;
+      var maxIntentos = 60; // buscar ata 60 dias
+
+      function buscarDia() {
+        if (intentos >= maxIntentos) {
+          slotsDiv.innerHTML = '<span style="color:var(--cor-erro);font-size:0.85rem;">Non se atopou slot libre nos proximos ' + maxIntentos + ' dias</span>';
+          return;
+        }
+        var partes = [
+          dataActual.getFullYear(),
+          ('0' + (dataActual.getMonth()+1)).slice(-2),
+          ('0' + dataActual.getDate()).slice(-2)
+        ];
+        var fechaFormateada = partes[2] + "/" + partes[1] + "/" + partes[0];
+        var url = obterUrlApi();
+        var claveAdmin = obterClaveAdmin();
+        fetch(url + "?accion=obtener_slots_fecha&admin_key=" + encodeURIComponent(claveAdmin) + "&fecha=" + encodeURIComponent(fechaFormateada), { method: "GET", redirect: "follow" })
+          .then(function(r) { return r.json(); })
+          .then(function(datos) {
+            if (datos.exito && datos.slots) {
+              var libres = datos.slots.filter(function(s) { return s.estado === "libre"; });
+              if (libres.length > 0) {
+                // Atopamos un dia con slots libres
+                dateInput.value = partes[0] + '-' + partes[1] + '-' + partes[2];
+                cargarSlotsReasig(indice);
+                return;
+              }
+            }
+            // Non hai libres, seguir co seguinte dia
+            intentos++;
+            dataActual.setDate(dataActual.getDate() + 1);
+            // Saltar domingos
+            if (dataActual.getDay() === 0) {
+              dataActual.setDate(dataActual.getDate() + 1);
+            }
+            buscarDia();
+          })
+          .catch(function() {
+            intentos++;
+            dataActual.setDate(dataActual.getDate() + 1);
+            buscarDia();
+          });
+      }
+      // Saltar domingo inicial
+      if (dataActual.getDay() === 0) dataActual.setDate(dataActual.getDate() + 1);
+      buscarDia();
+    }
+
+    function procesarReasignacion(indice, novoEstado, botonPulsado) {
+      var grupoBotons = botonPulsado.parentNode;
+      var botons = grupoBotons.querySelectorAll(".boton");
+      botons.forEach(function (b) { b.disabled = true; });
+
+      var textoOrixinal = botonPulsado.textContent;
+      botonPulsado.textContent = "Procesando...";
+
+      peticionPost("actualizar_reasignacion", {
+        indice: indice,
+        estado: novoEstado
+      })
+        .then(function (resultado) {
+          if (resultado.exito) {
+            var textoEstado = novoEstado === "Aprobada" ? "aprobada" : "denegada";
+            mostrarNotificacion("Solicitude de reasignacion " + textoEstado + " correctamente", "exito");
+            cargarReasignacions();
+          } else {
+            mostrarNotificacion("Erro: " + resultado.mensaje, "erro");
+            botons.forEach(function (b) { b.disabled = false; });
+            botonPulsado.textContent = textoOrixinal;
+          }
+        })
+        .catch(function (erro) {
+          mostrarNotificacion("Erro de conexion: " + erro.message, "erro");
+          botons.forEach(function (b) { b.disabled = false; });
+          botonPulsado.textContent = textoOrixinal;
+        });
+    }
+
+    // ============================================================
     // CITAS
     // ============================================================
     function cargarCitas() {
@@ -1323,59 +1670,44 @@
     function renderizarCitas() {
       var contedor = document.getElementById("contidoCitas");
 
-      var contadorElemento = document.getElementById("contadorCitas");
-      if (datosCitas.length > 0) {
-        contadorElemento.textContent = datosCitas.length;
-        contadorElemento.style.display = "inline-block";
-      } else {
-        contadorElemento.style.display = "none";
-      }
-
-      if (datosCitas.length === 0) {
-        contedor.innerHTML = '<div class="mensaxe-baleira"><p>Non hai citas proximas</p></div>';
-        return;
-      }
-
-      // Agrupar citas por data
-      var citasPorData = {};
-      datosCitas.forEach(function (cita) {
-        var claveData = cita.fecha || "Sen data";
-        if (!citasPorData[claveData]) {
-          citasPorData[claveData] = [];
-        }
-        citasPorData[claveData].push(cita);
-      });
-
-      var html = "";
-
       var hoxe = new Date();
       var diaHoxe = ("0" + hoxe.getDate()).slice(-2);
       var mesHoxe = ("0" + (hoxe.getMonth() + 1)).slice(-2);
       var anoHoxe = hoxe.getFullYear();
       var dataHoxeTexto = diaHoxe + "/" + mesHoxe + "/" + anoHoxe;
 
-      Object.keys(citasPorData).forEach(function (data) {
-        var eHoxe = (data === dataHoxeTexto);
-        var etiquetaData = eHoxe ? "HOXE - " + data : data;
-        var citasDoDia = citasPorData[data];
+      // Filtrar so citas de hoxe
+      var citasHoxe = datosCitas.filter(function (cita) {
+        return cita.fecha === dataHoxeTexto;
+      });
 
-        if (citasDoDia[0] && citasDoDia[0].dia) {
-          etiquetaData += " (" + citasDoDia[0].dia + ")";
-        }
+      var contadorElemento = document.getElementById("contadorCitas");
+      if (citasHoxe.length > 0) {
+        contadorElemento.textContent = citasHoxe.length;
+        contadorElemento.style.display = "inline-block";
+      } else {
+        contadorElemento.style.display = "none";
+      }
 
-        html += '<div class="separador-data"><span>' + escaparHtml(etiquetaData) + ' - ' + citasDoDia.length + ' cita(s)</span></div>';
+      if (citasHoxe.length === 0) {
+        contedor.innerHTML = '<div class="mensaxe-baleira"><p>Non hai citas para hoxe (' + dataHoxeTexto + ')</p></div>';
+        return;
+      }
 
-        citasDoDia.forEach(function (cita) {
-          html += '<div class="tarxeta">';
-          html += '  <div class="tarxeta-cabeceira">';
-          html += '    <span class="tarxeta-titulo">' + escaparHtml(cita.hora) + ' - ' + escaparHtml(cita.cliente) + '</span>';
-          html += '  </div>';
-          html += '  <div class="tarxeta-corpo">';
-          html += '    <div class="tarxeta-campo"><span class="etiqueta">Servizo</span><span class="valor">' + escaparHtml(cita.servicio) + '</span></div>';
-          html += '    <div class="tarxeta-campo"><span class="etiqueta">Importe</span><span class="valor">' + formatearImporte(cita.importe) + '</span></div>';
-          html += '  </div>';
-          html += '</div>';
-        });
+      var html = '';
+      var nomeDia = citasHoxe[0] && citasHoxe[0].dia ? citasHoxe[0].dia : "";
+      html += '<div class="separador-data"><span>HOXE - ' + escaparHtml(dataHoxeTexto) + (nomeDia ? ' (' + escaparHtml(nomeDia) + ')' : '') + ' - ' + citasHoxe.length + ' cita(s)</span></div>';
+
+      citasHoxe.forEach(function (cita) {
+        html += '<div class="tarxeta">';
+        html += '  <div class="tarxeta-cabeceira">';
+        html += '    <span class="tarxeta-titulo">' + escaparHtml(cita.hora) + ' - ' + escaparHtml(cita.cliente) + '</span>';
+        html += '  </div>';
+        html += '  <div class="tarxeta-corpo">';
+        html += '    <div class="tarxeta-campo"><span class="etiqueta">Servizo</span><span class="valor">' + escaparHtml(cita.servicio) + '</span></div>';
+        html += '    <div class="tarxeta-campo"><span class="etiqueta">Importe</span><span class="valor">' + formatearImporte(cita.importe) + '</span></div>';
+        html += '  </div>';
+        html += '</div>';
       });
 
       contedor.innerHTML = html;
@@ -1543,6 +1875,22 @@
                   .replace(/'/g, "&#39;")
                   .replace(/</g, "&lt;")
                   .replace(/>/g, "&gt;");
+    }
+
+    function formatearDataSolicitude(valor) {
+      if (!valor) return "-";
+      var texto = valor.toString();
+      // Se xa e formato dd/MM/yyyy HH:mm, devolver tal cal
+      if (/^\d{2}\/\d{2}\/\d{4}\s\d{2}:\d{2}$/.test(texto)) return texto;
+      // Intentar parsear como Date
+      var data = new Date(texto);
+      if (isNaN(data.getTime())) return texto;
+      var dia = ("0" + data.getDate()).slice(-2);
+      var mes = ("0" + (data.getMonth() + 1)).slice(-2);
+      var ano = data.getFullYear();
+      var horas = ("0" + data.getHours()).slice(-2);
+      var minutos = ("0" + data.getMinutes()).slice(-2);
+      return dia + "/" + mes + "/" + ano + " " + horas + ":" + minutos;
     }
 
     function formatearImporte(valor) {

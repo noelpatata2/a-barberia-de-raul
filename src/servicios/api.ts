@@ -104,6 +104,14 @@ export async function obtenerMisCancelaciones(): Promise<RespuestaCancelaciones>
   return datos;
 }
 
+// Obter solicitudes de reasignacion do cliente autenticado
+export async function obtenerMisReasignaciones(): Promise<{ exito: boolean; reasignaciones: Array<{ fecha: string; hora: string; estado: string }> }> {
+  const url = await construirUrl('obtener_mis_reasignaciones');
+  const respuesta = await fetch(url);
+  const datos = await respuesta.json();
+  return datos;
+}
+
 // Solicitar cita extra (pendente de confirmacion pola xerencia)
 export async function solicitarCitaExtra(
   servicio: string,

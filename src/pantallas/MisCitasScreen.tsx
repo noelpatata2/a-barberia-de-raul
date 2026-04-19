@@ -20,6 +20,7 @@ import { Colores } from '../constantes/colores';
 import { obtenerProximasCitas, obtenerMisCancelaciones } from '../servicios/api';
 import { Cita, SolicitudCancelacion, EstadoCancelacion } from '../tipos';
 import { useAuth } from '../contexto/AuthContext';
+import { cerrarSesion } from '../servicios/autenticacion';
 import CitaCard from '../componentes/CitaCard';
 
 // Cores exactas do deseno
@@ -329,6 +330,21 @@ export default function MisCitasScreen() {
           colors={[COLORES_DISENO.doradoGradienteInicio, COLORES_DISENO.doradoGradienteFin]}
           style={estilos.cabecera}
         >
+          <TouchableOpacity
+            style={estilos.botonCerrarSesion}
+            onPress={() => {
+              Alert.alert(
+                'Pechar sesion',
+                'Seguro que queres pechar sesion?',
+                [
+                  { text: 'Cancelar', style: 'cancel' },
+                  { text: 'Pechar', style: 'destructive', onPress: () => cerrarSesion() },
+                ]
+              );
+            }}
+          >
+            <Ionicons name="log-out-outline" size={22} color="#FFFFFF" />
+          </TouchableOpacity>
           <Image
             source={require('../../assets/raul.png')}
             style={estilos.fotoBarber}
@@ -524,6 +540,18 @@ const estilos = StyleSheet.create({
     paddingTop: 60,
     paddingBottom: 48,
     alignItems: 'center',
+    position: 'relative' as const,
+  },
+  botonCerrarSesion: {
+    position: 'absolute' as const,
+    top: 52,
+    right: 20,
+    padding: 8,
+    zIndex: 10,
+    backgroundColor: 'rgba(192, 57, 43, 0.7)',
+    borderRadius: 20,
+    borderWidth: 1.5,
+    borderColor: 'rgba(255, 255, 255, 0.5)',
   },
   fotoBarber: {
     width: 70,

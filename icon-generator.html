@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>Icono Barbería Raúl</title>
+<style>
+  body {
+    margin: 0;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+    background: #333;
+  }
+  .info {
+    position: fixed;
+    bottom: 20px;
+    color: white;
+    font-family: sans-serif;
+    text-align: center;
+  }
+  .info button {
+    padding: 10px 30px;
+    font-size: 16px;
+    cursor: pointer;
+    background: #8B6914;
+    color: white;
+    border: none;
+    border-radius: 8px;
+  }
+</style>
+</head>
+<body>
+
+<canvas id="icon" width="1024" height="1024"></canvas>
+
+<div class="info">
+  <button onclick="descargar()">Descargar PNG</button>
+</div>
+
+<script>
+const c = document.getElementById('icon');
+const ctx = c.getContext('2d');
+const W = 1024;
+
+ctx.fillStyle = '#FFFFFF';
+ctx.fillRect(0, 0, W, W);
+
+// Layout: palo a la izquierda, texto a la derecha centrado verticalmente
+const poleCx = 260;
+const textCx = 620;
+const centerY = W / 2;
+
+// ============ PALO DE BARBERO (pequeño) ============
+const topY = centerY - 80;
+const botY = centerY + 80;
+const R = 28;
+
+// Sombra
+ctx.save();
+ctx.shadowColor = 'rgba(0,0,0,0.12)';
+ctx.shadowBlur = 16;
+ctx.shadowOffsetX = 6;
+ctx.shadowOffsetY = 6;
+ctx.beginPath();
+ctx.roundRect(poleCx - R, topY, R * 2, botY - topY, 5);
+ctx.fillStyle = '#FFF';
+ctx.fill();
+ctx.restore();
+
+// Cupula superior
+ctx.save();
+ctx.beginPath();
+ctx.moveTo(poleCx - R - 4, topY + 6);
+ctx.quadraticCurveTo(poleCx - R - 4, topY - 32, poleCx, topY - 35);
+ctx.quadraticCurveTo(poleCx + R + 4, topY - 32, poleCx + R + 4, topY + 6);
+ctx.closePath();
+const domeG = ctx.createLinearGradient(poleCx - R, topY - 35, poleCx + R, topY);
+domeG.addColorStop(0, '#0F2048');
+domeG.addColorStop(0.35, '#1A3568');
+domeG.addColorStop(0.5, '#203D75');
+domeG.addColorStop(0.65, '#1A3568');
+domeG.addColorStop(1, '#0D1838');
+ctx.fillStyle = domeG;
+ctx.fill();
+ctx.beginPath();
+ctx.ellipse(poleCx + 8, topY - 18, 4, 9, -0.2, 0, Math.PI * 2);
+ctx.fillStyle = 'rgba(255,255,255,0.4)';
+ctx.fill();
+ctx.restore();
+
+// Cupula inferior
+ctx.save();
+ctx.beginPath();
+ctx.moveTo(poleCx - R - 4, botY - 6);
+ctx.quadraticCurveTo(poleCx - R - 4, botY + 32, poleCx, botY + 35);
+ctx.quadraticCurveTo(poleCx + R + 4, botY + 32, poleCx + R + 4, botY - 6);
+ctx.closePath();
+ctx.fillStyle = domeG;
+ctx.fill();
+ctx.beginPath();
+ctx.ellipse(poleCx + 8, botY + 16, 3, 8, -0.2, 0, Math.PI * 2);
+ctx.fillStyle = 'rgba(255,255,255,0.3)';
+ctx.fill();
+ctx.restore();
+
+// Anillos metalicos
+function drawRing(y) {
+  ctx.beginPath();
+  ctx.roundRect(poleCx - R - 6, y - 6, (R + 6) * 2, 12, 2);
+  const mg = ctx.createLinearGradient(poleCx - R - 6, y - 6, poleCx - R - 6, y + 6);
+  mg.addColorStop(0, '#A0A0A0');
+  mg.addColorStop(0.2, '#D0D0D0');
+  mg.addColorStop(0.45, '#EDEDED');
+  mg.addColorStop(0.55, '#E0E0E0');
+  mg.addColorStop(0.8, '#C0C0C0');
+  mg.addColorStop(1, '#909090');
+  ctx.fillStyle = mg;
+  ctx.fill();
+  ctx.strokeStyle = '#888';
+  ctx.lineWidth = 0.8;
+  ctx.stroke();
+}
+
+drawRing(topY + 4);
+drawRing(botY - 4);
+
+// Cilindro con rayas
+const cylTop = topY + 10;
+const cylBot = botY - 10;
+const cylH = cylBot - cylTop;
+
+ctx.save();
+ctx.beginPath();
+ctx.rect(poleCx - R, cylTop, R * 2, cylH);
+ctx.clip();
+
+const cylBg = ctx.createLinearGradient(poleCx - R, 0, poleCx + R, 0);
+cylBg.addColorStop(0, '#D0D0D0');
+cylBg.addColorStop(0.1, '#E8E8E8');
+cylBg.addColorStop(0.25, '#F5F5F5');
+cylBg.addColorStop(0.45, '#FFFFFF');
+cylBg.addColorStop(0.65, '#FAFAFA');
+cylBg.addColorStop(0.8, '#EDEDED');
+cylBg.addColorStop(0.9, '#E0E0E0');
+cylBg.addColorStop(1, '#CCCCCC');
+ctx.fillStyle = cylBg;
+ctx.fillRect(poleCx - R, cylTop, R * 2, cylH);
+
+const period = cylH / 2;
+
+for (let i = -3; i < 14; i++) {
+  const baseY = cylTop + i * period;
+  drawHelicalStripe(baseY, '#D42020', '#8B0000', '#FF3030');
+  drawHelicalStripe(baseY + period * 0.5, '#1A3580', '#0D1B50', '#2850B0');
+}
+
+function drawHelicalStripe(startY, midColor, edgeColor, highlightColor) {
+  const stripeH = period * 0.28;
+  const points = [];
+  const pointsBot = [];
+  const steps = 60;
+
+  for (let s = 0; s <= steps; s++) {
+    const t = s / steps;
+    const x = poleCx + R - t * R * 2;
+    const angle = t * Math.PI;
+    const yShift = -Math.cos(angle) * period * 0.2;
+    const thickness = stripeH * (0.5 + Math.sin(angle) * 0.7);
+    points.push({x, y: startY + yShift});
+    pointsBot.push({x, y: startY + yShift + Math.max(thickness, 2)});
+  }
+
+  ctx.beginPath();
+  ctx.moveTo(points[0].x, points[0].y);
+  for (let s = 1; s < points.length; s++) ctx.lineTo(points[s].x, points[s].y);
+  for (let s = pointsBot.length - 1; s >= 0; s--) ctx.lineTo(pointsBot[s].x, pointsBot[s].y);
+  ctx.closePath();
+
+  const sg = ctx.createLinearGradient(poleCx - R, 0, poleCx + R, 0);
+  sg.addColorStop(0, edgeColor);
+  sg.addColorStop(0.15, midColor);
+  sg.addColorStop(0.35, highlightColor);
+  sg.addColorStop(0.5, midColor);
+  sg.addColorStop(0.7, midColor);
+  sg.addColorStop(0.85, edgeColor);
+  sg.addColorStop(1, edgeColor);
+  ctx.fillStyle = sg;
+  ctx.fill();
+}
+
+const shine = ctx.createLinearGradient(poleCx - R, 0, poleCx + R, 0);
+shine.addColorStop(0, 'rgba(0,0,0,0.05)');
+shine.addColorStop(0.25, 'rgba(255,255,255,0)');
+shine.addColorStop(0.38, 'rgba(255,255,255,0.18)');
+shine.addColorStop(0.45, 'rgba(255,255,255,0.22)');
+shine.addColorStop(0.52, 'rgba(255,255,255,0.12)');
+shine.addColorStop(0.7, 'rgba(255,255,255,0)');
+shine.addColorStop(1, 'rgba(0,0,0,0.06)');
+ctx.fillStyle = shine;
+ctx.fillRect(poleCx - R, cylTop, R * 2, cylH);
+
+ctx.restore();
+
+// ============ TEXTO a la derecha ============
+ctx.textAlign = 'center';
+ctx.textBaseline = 'middle';
+
+ctx.fillStyle = '#333333';
+ctx.font = '600 100px Georgia, serif';
+ctx.fillText('Barbería', textCx, centerY - 50);
+
+ctx.fillStyle = '#8B6914';
+ctx.font = 'bold 130px Georgia, serif';
+ctx.fillText('Raúl', textCx, centerY + 80);
+
+function descargar() {
+  const link = document.createElement('a');
+  link.download = 'icon-barberia-raul.png';
+  link.href = c.toDataURL('image/png');
+  link.click();
+}
+</script>
+</body>
+</html>
