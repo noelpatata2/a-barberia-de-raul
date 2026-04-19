@@ -295,6 +295,23 @@
       border-color: var(--cor-ouro-claro);
     }
 
+    .boton-papeleira {
+      background: transparent;
+      border: none;
+      color: var(--cor-texto-gris);
+      font-size: 18px;
+      line-height: 1;
+      padding: 4px 8px;
+      cursor: pointer;
+      border-radius: 6px;
+      transition: color 0.15s, background-color 0.15s;
+    }
+
+    .boton-papeleira:hover {
+      color: var(--cor-erro);
+      background-color: rgba(196, 59, 43, 0.08);
+    }
+
     /* ============================================================
        Taboas (para pantallas anchas)
        ============================================================ */
@@ -1123,10 +1140,39 @@
         });
     }
 
+    var CHAVE_CANCELACIONS_OCULTAS = "cancelacionsOcultas";
+
+    function obterCancelacionsOcultas() {
+      try {
+        var raw = localStorage.getItem(CHAVE_CANCELACIONS_OCULTAS);
+        return raw ? JSON.parse(raw) : [];
+      } catch (e) {
+        return [];
+      }
+    }
+
+    function gardarCancelacionsOcultas(lista) {
+      localStorage.setItem(CHAVE_CANCELACIONS_OCULTAS, JSON.stringify(lista));
+    }
+
+    function ocultarCancelacion(indice) {
+      var ocultas = obterCancelacionsOcultas();
+      if (ocultas.indexOf(indice) === -1) {
+        ocultas.push(indice);
+        gardarCancelacionsOcultas(ocultas);
+      }
+      renderizarCancelacions();
+    }
+
     function renderizarCancelacions() {
       var contedor = document.getElementById("contidoCancelacions");
+      var ocultas = obterCancelacionsOcultas();
 
-      var pendentes = datosCancelacions.filter(function (c) {
+      var visibles = datosCancelacions.filter(function (c) {
+        return ocultas.indexOf(c.indice) === -1;
+      });
+
+      var pendentes = visibles.filter(function (c) {
         return c.estado === "Pendiente";
       });
 
@@ -1138,12 +1184,12 @@
         contadorElemento.style.display = "none";
       }
 
-      if (datosCancelacions.length === 0) {
+      if (visibles.length === 0) {
         contedor.innerHTML = '<div class="mensaxe-baleira"><p>Non hai solicitudes de cancelacion</p></div>';
         return;
       }
 
-      var ordenadas = datosCancelacions.slice().sort(function (a, b) {
+      var ordenadas = visibles.slice().sort(function (a, b) {
         if (a.estado === "Pendiente" && b.estado !== "Pendiente") return -1;
         if (a.estado !== "Pendiente" && b.estado === "Pendiente") return 1;
         return 0;
@@ -1159,7 +1205,12 @@
         html += '<div class="tarxeta">';
         html += '  <div class="tarxeta-cabeceira">';
         html += '    <span class="tarxeta-titulo">' + escaparHtml(solicitude.cliente) + '</span>';
-        html += '    <span class="etiqueta-estado ' + claseEstado + '">' + escaparHtml(solicitude.estado) + '</span>';
+        html += '    <span style="display:flex;align-items:center;gap:8px;">';
+        html += '      <span class="etiqueta-estado ' + claseEstado + '">' + escaparHtml(solicitude.estado) + '</span>';
+        if (!ePendente) {
+          html += '      <button class="boton-papeleira" title="Eliminar da vista" onclick="ocultarCancelacion(' + solicitude.indice + ')">&#128465;</button>';
+        }
+        html += '    </span>';
         html += '  </div>';
         html += '  <div class="tarxeta-corpo">';
         html += '    <div class="tarxeta-campo"><span class="etiqueta">Data da cita</span><span class="valor">' + escaparHtml(solicitude.fechaCita) + '</span></div>';
