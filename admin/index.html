@@ -313,6 +313,152 @@
     }
 
     /* ============================================================
+       Modales
+       ============================================================ */
+    .modal-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.5);
+      display: none;
+      align-items: flex-start;
+      justify-content: center;
+      z-index: 1000;
+      padding: 40px 16px;
+      overflow-y: auto;
+    }
+
+    .modal-overlay.visible {
+      display: flex;
+    }
+
+    .modal {
+      background-color: var(--cor-tarxeta);
+      border-radius: var(--radio-borde);
+      padding: 24px;
+      width: 100%;
+      max-width: 520px;
+      max-height: calc(100vh - 80px);
+      overflow-y: auto;
+      box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+    }
+
+    .modal h3 {
+      margin: 0 0 16px 0;
+      color: var(--cor-primaria);
+      font-size: 18px;
+    }
+
+    .modal-campo {
+      display: block;
+      margin-bottom: 12px;
+    }
+
+    .modal-campo label {
+      display: block;
+      font-size: 12px;
+      color: var(--cor-texto-gris);
+      text-transform: uppercase;
+      letter-spacing: 0.3px;
+      margin-bottom: 4px;
+    }
+
+    .modal-campo input[type="text"],
+    .modal-campo input[type="email"],
+    .modal-campo input[type="tel"],
+    .modal-campo input[type="number"],
+    .modal-campo input[type="date"],
+    .modal-campo input[type="time"],
+    .modal-campo select,
+    .modal-campo textarea {
+      width: 100%;
+      padding: 8px 10px;
+      background-color: var(--cor-fondo);
+      border: 1px solid var(--cor-borde);
+      border-radius: 6px;
+      color: var(--cor-texto);
+      font-size: 14px;
+      box-sizing: border-box;
+    }
+
+    .modal-campo input:focus,
+    .modal-campo select:focus,
+    .modal-campo textarea:focus {
+      outline: none;
+      border-color: var(--cor-primaria);
+    }
+
+    .modal-checkboxs {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+    }
+
+    .modal-chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      padding: 4px 10px;
+      background: var(--cor-fondo);
+      border: 1px solid var(--cor-borde);
+      border-radius: 16px;
+      font-size: 12px;
+      cursor: pointer;
+      user-select: none;
+    }
+
+    .modal-chip input {
+      margin: 0;
+    }
+
+    .modal-chip.seleccionado {
+      background: var(--cor-ouro-claro);
+      border-color: var(--cor-primaria);
+      color: #fff;
+    }
+
+    .modal-acciones {
+      display: flex;
+      justify-content: flex-end;
+      gap: 8px;
+      margin-top: 18px;
+      position: sticky;
+      bottom: 0;
+      background: var(--cor-tarxeta);
+      padding-top: 12px;
+    }
+
+    .boton-novo-cliente {
+      background: linear-gradient(135deg, var(--cor-primaria), var(--cor-ouro-claro));
+      color: #fff;
+      border: none;
+      padding: 8px 14px;
+      border-radius: 6px;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+    }
+
+    .boton-novo-cliente:hover {
+      opacity: 0.9;
+    }
+
+    .boton-accion-cliente {
+      background: transparent;
+      border: 1px solid var(--cor-borde);
+      color: var(--cor-texto-gris);
+      padding: 4px 10px;
+      border-radius: 5px;
+      font-size: 12px;
+      cursor: pointer;
+      margin-left: 6px;
+    }
+
+    .boton-accion-cliente:hover {
+      border-color: var(--cor-primaria);
+      color: var(--cor-primaria);
+    }
+
+    /* ============================================================
        Dashboard (sección Inicio)
        ============================================================ */
     .panel-dashboard {
@@ -999,6 +1145,7 @@
         <h2>Clientes</h2>
         <input type="text" class="campo-busca" id="buscaClientes"
           placeholder="Buscar por nome..." oninput="filtrarClientes()">
+        <button class="boton-novo-cliente" onclick="abrirModalNovoCliente()">+ Novo cliente</button>
       </div>
       <div id="contidoClientes">
         <div class="indicador-carga">
@@ -1009,6 +1156,109 @@
     </section>
 
   </main>
+
+  <!-- ============================================================
+       Modal: Novo cliente
+       ============================================================ -->
+  <div class="modal-overlay" id="modalNovoCliente" onclick="if(event.target===this) pecharModal('modalNovoCliente')">
+    <div class="modal">
+      <h3>Novo cliente</h3>
+      <div class="modal-campo">
+        <label>Nome *</label>
+        <input type="text" id="novoClienteNome" placeholder="Nome do cliente">
+      </div>
+      <div class="modal-campo">
+        <label>Teléfono</label>
+        <input type="tel" id="novoClienteTelefono" placeholder="Opcional">
+      </div>
+      <div class="modal-campo">
+        <label>Email</label>
+        <input type="email" id="novoClienteEmail" placeholder="Opcional">
+      </div>
+      <div class="modal-acciones">
+        <button class="boton boton-secundario" onclick="pecharModal('modalNovoCliente')">Cancelar</button>
+        <button class="boton boton-gardar" id="botonCrearCliente" onclick="crearNovoCliente()">Crear</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============================================================
+       Modal: Asignar cita
+       ============================================================ -->
+  <div class="modal-overlay" id="modalAsignarCita" onclick="if(event.target===this) pecharModal('modalAsignarCita')">
+    <div class="modal">
+      <h3 id="tituloModalCita">Asignar cita</h3>
+      <input type="hidden" id="asignarCitaCliente">
+      <div class="modal-campo">
+        <label>Data</label>
+        <input type="date" id="asignarCitaFecha" onchange="cargarSlotsLibres()">
+      </div>
+      <div class="modal-campo">
+        <label>Hora (slots libres)</label>
+        <select id="asignarCitaHora">
+          <option value="">Selecciona unha data primeiro</option>
+        </select>
+      </div>
+      <div class="modal-campo">
+        <label>Servizo</label>
+        <input type="text" id="asignarCitaServicio" placeholder="Ex: Corte, Barba...">
+      </div>
+      <div class="modal-campo">
+        <label>Importe (€)</label>
+        <input type="number" id="asignarCitaImporte" placeholder="Opcional" step="0.5" min="0">
+      </div>
+      <div class="modal-acciones">
+        <button class="boton boton-secundario" onclick="pecharModal('modalAsignarCita')">Cancelar</button>
+        <button class="boton boton-gardar" id="botonAsignarCita" onclick="asignarCitaConfirmar()">Asignar</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============================================================
+       Modal: Preferencias cliente
+       ============================================================ -->
+  <div class="modal-overlay" id="modalPreferencias" onclick="if(event.target===this) pecharModal('modalPreferencias')">
+    <div class="modal">
+      <h3 id="tituloModalPreferencias">Preferencias</h3>
+      <input type="hidden" id="prefCliente">
+      <div class="modal-campo">
+        <label>Teléfono</label>
+        <input type="tel" id="prefTelefono">
+      </div>
+      <div class="modal-campo">
+        <label>Servizos preferidos (separados por coma)</label>
+        <input type="text" id="prefServizos" placeholder="Corte, Barba, Tinte...">
+      </div>
+      <div class="modal-campo">
+        <label>Intervalo entre citas</label>
+        <select id="prefIntervalo">
+          <option value="">-</option>
+          <option value="1 semana">1 semana</option>
+          <option value="2 semanas">2 semanas</option>
+          <option value="3 semanas">3 semanas</option>
+          <option value="1 mes">1 mes</option>
+          <option value="2 meses">2 meses</option>
+        </select>
+      </div>
+      <div id="prefDiasContedor"></div>
+      <div class="modal-campo">
+        <label>Cambio de dispoñibilidade</label>
+        <input type="text" id="prefCambioDisp" placeholder="Separado por coma">
+      </div>
+      <div class="modal-campo">
+        <label>Día alternativo</label>
+        <input type="text" id="prefDiaAlt" placeholder="Separado por coma">
+      </div>
+      <div class="modal-campo">
+        <label>Outras condicións</label>
+        <textarea id="prefOutras" rows="2"></textarea>
+      </div>
+      <div class="modal-acciones">
+        <button class="boton boton-secundario" onclick="pecharModal('modalPreferencias')">Cancelar</button>
+        <button class="boton boton-gardar" id="botonGardarPref" onclick="gardarPreferenciasAdmin()">Gardar</button>
+      </div>
+    </div>
+  </div>
 
   <!-- ============================================================
        Pe de paxina
@@ -1219,7 +1469,7 @@
     // ============================================================
     // Peticions ao API
     // ============================================================
-    function peticionGet(accion) {
+    function peticionGet(accion, paramsExtra) {
       var url = obterUrlApi();
       if (!url) {
         return Promise.reject(new Error("URL do API non configurada"));
@@ -1231,6 +1481,11 @@
       var parametros = "?accion=" + encodeURIComponent(accion);
       if (claveAdmin) {
         parametros += "&admin_key=" + encodeURIComponent(claveAdmin);
+      }
+      if (paramsExtra && typeof paramsExtra === "object") {
+        Object.keys(paramsExtra).forEach(function (k) {
+          parametros += "&" + encodeURIComponent(k) + "=" + encodeURIComponent(paramsExtra[k]);
+        });
       }
 
       return fetch(url + parametros, {
@@ -2306,8 +2561,14 @@
       htmlTaboa += '<tbody>';
 
       datosClientes.forEach(function (cliente) {
+        var nomeAttr = escaparAtributo(cliente.nombre);
         htmlTaboa += '<tr id="filaCliente' + cliente.indice + '">';
-        htmlTaboa += '<td>' + escaparHtml(cliente.nombre) + '</td>';
+        htmlTaboa += '<td>' + escaparHtml(cliente.nombre);
+        htmlTaboa += '  <div style="margin-top:4px;">';
+        htmlTaboa += '    <button class="boton-accion-cliente" onclick="abrirModalAsignarCita(\'' + nomeAttr + '\')">Cita</button>';
+        htmlTaboa += '    <button class="boton-accion-cliente" onclick="abrirModalPreferencias(\'' + nomeAttr + '\')">Preferencias</button>';
+        htmlTaboa += '  </div>';
+        htmlTaboa += '</td>';
         htmlTaboa += '<td>' + escaparHtml(String(cliente.totalCitas)) + '</td>';
         htmlTaboa += '<td><div style="display:flex;gap:6px;align-items:center;">';
         htmlTaboa += '<input type="email" id="emailCliente' + cliente.indice + '" value="' + escaparAtributo(cliente.email) + '" placeholder="Sen email vinculado" style="flex:1;">';
@@ -2326,12 +2587,17 @@
       var htmlTarxetas = '<div class="so-movil">';
 
       datosClientes.forEach(function (cliente) {
+        var nomeAttr = escaparAtributo(cliente.nombre);
         htmlTarxetas += '<div class="tarxeta">';
         htmlTarxetas += '  <div class="tarxeta-cabeceira">';
         htmlTarxetas += '    <span class="tarxeta-titulo">' + escaparHtml(cliente.nombre) + '</span>';
         htmlTarxetas += '  </div>';
         htmlTarxetas += '  <div class="tarxeta-corpo">';
         htmlTarxetas += '    <div class="tarxeta-campo"><span class="etiqueta">Total citas</span><span class="valor">' + escaparHtml(String(cliente.totalCitas)) + '</span></div>';
+        htmlTarxetas += '  </div>';
+        htmlTarxetas += '  <div style="display:flex;gap:6px;margin-top:10px;">';
+        htmlTarxetas += '    <button class="boton-accion-cliente" onclick="abrirModalAsignarCita(\'' + nomeAttr + '\')">Cita</button>';
+        htmlTarxetas += '    <button class="boton-accion-cliente" onclick="abrirModalPreferencias(\'' + nomeAttr + '\')">Preferencias</button>';
         htmlTarxetas += '  </div>';
         htmlTarxetas += '  <div style="margin-top: 10px;">';
         htmlTarxetas += '    <label style="font-size: 0.75rem; color: var(--cor-texto-gris); display: block; margin-bottom: 4px;">Email</label>';
@@ -2487,6 +2753,276 @@
       var numero = parseFloat(valor);
       if (isNaN(numero)) return escaparHtml(String(valor));
       return numero.toFixed(2) + " EUR";
+    }
+
+    // ============================================================
+    // MODALES (novo cliente / asignar cita / preferencias)
+    // ============================================================
+    function abrirModal(id) {
+      document.getElementById(id).classList.add("visible");
+    }
+
+    function pecharModal(id) {
+      document.getElementById(id).classList.remove("visible");
+    }
+
+    document.addEventListener("keydown", function (ev) {
+      if (ev.key === "Escape") {
+        ["modalNovoCliente", "modalAsignarCita", "modalPreferencias"].forEach(pecharModal);
+      }
+    });
+
+    // ----- Novo cliente -----
+    function abrirModalNovoCliente() {
+      document.getElementById("novoClienteNome").value = "";
+      document.getElementById("novoClienteTelefono").value = "";
+      document.getElementById("novoClienteEmail").value = "";
+      abrirModal("modalNovoCliente");
+      setTimeout(function () { document.getElementById("novoClienteNome").focus(); }, 50);
+    }
+
+    function crearNovoCliente() {
+      var nome = document.getElementById("novoClienteNome").value.trim();
+      var telefono = document.getElementById("novoClienteTelefono").value.trim();
+      var email = document.getElementById("novoClienteEmail").value.trim();
+
+      if (!nome) {
+        mostrarNotificacion("O nome é obrigatorio", "erro");
+        return;
+      }
+
+      var boton = document.getElementById("botonCrearCliente");
+      boton.disabled = true;
+      boton.textContent = "Creando...";
+
+      peticionPost("crear_cliente", { nombre: nome, telefono: telefono, email: email })
+        .then(function (r) {
+          boton.disabled = false;
+          boton.textContent = "Crear";
+          if (r.exito) {
+            mostrarNotificacion("Cliente creado", "exito");
+            pecharModal("modalNovoCliente");
+            cargarClientes();
+          } else {
+            mostrarNotificacion("Erro: " + r.mensaje, "erro");
+          }
+        })
+        .catch(function (e) {
+          boton.disabled = false;
+          boton.textContent = "Crear";
+          mostrarNotificacion("Erro de conexion: " + e.message, "erro");
+        });
+    }
+
+    // ----- Asignar cita -----
+    function abrirModalAsignarCita(nomeCliente) {
+      document.getElementById("tituloModalCita").textContent = "Asignar cita — " + nomeCliente;
+      document.getElementById("asignarCitaCliente").value = nomeCliente;
+      var hoxe = new Date();
+      var iso = hoxe.getFullYear() + "-" + ("0" + (hoxe.getMonth() + 1)).slice(-2) + "-" + ("0" + hoxe.getDate()).slice(-2);
+      document.getElementById("asignarCitaFecha").value = iso;
+      document.getElementById("asignarCitaHora").innerHTML = '<option value="">Cargando...</option>';
+      document.getElementById("asignarCitaServicio").value = "";
+      document.getElementById("asignarCitaImporte").value = "";
+      abrirModal("modalAsignarCita");
+      cargarSlotsLibres();
+    }
+
+    function cargarSlotsLibres() {
+      var iso = document.getElementById("asignarCitaFecha").value;
+      if (!iso) return;
+      var partes = iso.split("-");
+      var fechaDDMM = partes[2] + "/" + partes[1] + "/" + partes[0];
+      var select = document.getElementById("asignarCitaHora");
+      select.innerHTML = '<option value="">Cargando...</option>';
+
+      peticionGet("obtener_slots_fecha", { fecha: fechaDDMM })
+        .then(function (r) {
+          if (!r.exito) {
+            select.innerHTML = '<option value="">Erro ao cargar</option>';
+            return;
+          }
+          var libres = (r.slots || []).filter(function (s) { return s.estado === "libre"; });
+          if (libres.length === 0) {
+            select.innerHTML = '<option value="">Non hai slots libres</option>';
+            return;
+          }
+          var opts = '<option value="">-- Elixe hora --</option>';
+          libres.forEach(function (s) {
+            opts += '<option value="' + s.hora + '">' + s.hora + '</option>';
+          });
+          select.innerHTML = opts;
+        })
+        .catch(function () {
+          select.innerHTML = '<option value="">Erro de conexion</option>';
+        });
+    }
+
+    function asignarCitaConfirmar() {
+      var cliente = document.getElementById("asignarCitaCliente").value;
+      var iso = document.getElementById("asignarCitaFecha").value;
+      var hora = document.getElementById("asignarCitaHora").value;
+      var servicio = document.getElementById("asignarCitaServicio").value.trim();
+      var importe = document.getElementById("asignarCitaImporte").value;
+
+      if (!iso || !hora || !servicio) {
+        mostrarNotificacion("Data, hora e servizo son obrigatorios", "erro");
+        return;
+      }
+
+      var partes = iso.split("-");
+      var fechaDDMM = partes[2] + "/" + partes[1] + "/" + partes[0];
+
+      var boton = document.getElementById("botonAsignarCita");
+      boton.disabled = true;
+      boton.textContent = "Asignando...";
+
+      peticionPost("asignar_cita_admin", {
+        cliente: cliente,
+        fecha: fechaDDMM,
+        hora: hora,
+        servicio: servicio,
+        importe: importe ? parseFloat(importe) : ""
+      })
+        .then(function (r) {
+          boton.disabled = false;
+          boton.textContent = "Asignar";
+          if (r.exito) {
+            mostrarNotificacion("Cita asignada", "exito");
+            pecharModal("modalAsignarCita");
+            cargarCitas();
+            cargarInicio();
+          } else {
+            mostrarNotificacion("Erro: " + r.mensaje, "erro");
+          }
+        })
+        .catch(function (e) {
+          boton.disabled = false;
+          boton.textContent = "Asignar";
+          mostrarNotificacion("Erro de conexion: " + e.message, "erro");
+        });
+    }
+
+    // ----- Preferencias -----
+    var HORAS_POSIBLES = ["9:00","9:30","10:00","10:30","11:00","11:30","12:00","12:30","13:00","13:30","14:00","16:00","16:30","17:00","17:30","18:00","18:30","19:00","19:30","20:00","20:30"];
+    var DIAS_PREF = ["luns","martes","mercores","xoves","venres","sabado"];
+
+    function renderizarDiasPreferencias() {
+      var contedor = document.getElementById("prefDiasContedor");
+      var html = "";
+      DIAS_PREF.forEach(function (dia) {
+        var etiqueta = dia.charAt(0).toUpperCase() + dia.slice(1);
+        html += '<div class="modal-campo">';
+        html += '  <label>' + etiqueta + ' — horas preferidas</label>';
+        html += '  <div class="modal-checkboxs" id="prefHoras_' + dia + '">';
+        HORAS_POSIBLES.forEach(function (h) {
+          html += '<label class="modal-chip"><input type="checkbox" value="' + h + '" data-dia="' + dia + '" onchange="actualizarChip(this)"> ' + h + '</label>';
+        });
+        html += '  </div>';
+        html += '</div>';
+      });
+      contedor.innerHTML = html;
+    }
+
+    function actualizarChip(checkbox) {
+      var label = checkbox.parentNode;
+      if (checkbox.checked) label.classList.add("seleccionado");
+      else label.classList.remove("seleccionado");
+    }
+
+    function marcarHorasDia(dia, textoHoras) {
+      var horas = (textoHoras || "").split(",").map(function (h) { return h.trim(); });
+      var checkboxs = document.querySelectorAll('#prefHoras_' + dia + ' input[type="checkbox"]');
+      checkboxs.forEach(function (cb) {
+        cb.checked = horas.indexOf(cb.value) !== -1;
+        actualizarChip(cb);
+      });
+    }
+
+    function obterHorasDia(dia) {
+      var seleccionadas = [];
+      document.querySelectorAll('#prefHoras_' + dia + ' input[type="checkbox"]:checked').forEach(function (cb) {
+        seleccionadas.push(cb.value);
+      });
+      return seleccionadas;
+    }
+
+    function abrirModalPreferencias(nomeCliente) {
+      document.getElementById("tituloModalPreferencias").textContent = "Preferencias — " + nomeCliente;
+      document.getElementById("prefCliente").value = nomeCliente;
+
+      // Resetear
+      document.getElementById("prefTelefono").value = "";
+      document.getElementById("prefServizos").value = "";
+      document.getElementById("prefIntervalo").value = "";
+      document.getElementById("prefCambioDisp").value = "";
+      document.getElementById("prefDiaAlt").value = "";
+      document.getElementById("prefOutras").value = "";
+      renderizarDiasPreferencias();
+
+      abrirModal("modalPreferencias");
+
+      // Pre-cargar preferencias existentes (se as hai)
+      peticionGet("obtener_preferencias_cliente", { cliente: nomeCliente })
+        .then(function (r) {
+          if (r.exito && r.preferencias) {
+            var p = r.preferencias;
+            document.getElementById("prefTelefono").value = p.telefono || "";
+            document.getElementById("prefServizos").value = p.servizos || "";
+            document.getElementById("prefIntervalo").value = p.intervalo || "";
+            document.getElementById("prefCambioDisp").value = p.cambioDisponibilidade || "";
+            document.getElementById("prefDiaAlt").value = p.diaAlternativo || "";
+            document.getElementById("prefOutras").value = p.outrasCondicions || "";
+            DIAS_PREF.forEach(function (dia) {
+              marcarHorasDia(dia, p[dia] || "");
+            });
+          }
+        })
+        .catch(function () { /* sen preferencias previas, deixar en branco */ });
+    }
+
+    function gardarPreferenciasAdmin() {
+      var cliente = document.getElementById("prefCliente").value;
+      var servizos = document.getElementById("prefServizos").value.split(",").map(function (s) { return s.trim(); }).filter(Boolean);
+      var cambioDisp = document.getElementById("prefCambioDisp").value.split(",").map(function (s) { return s.trim(); }).filter(Boolean);
+      var diaAlt = document.getElementById("prefDiaAlt").value.split(",").map(function (s) { return s.trim(); }).filter(Boolean);
+
+      var datos = {
+        cliente: cliente,
+        telefono: document.getElementById("prefTelefono").value.trim(),
+        servizos: servizos,
+        intervalo: document.getElementById("prefIntervalo").value,
+        luns: obterHorasDia("luns"),
+        martes: obterHorasDia("martes"),
+        mercores: obterHorasDia("mercores"),
+        xoves: obterHorasDia("xoves"),
+        venres: obterHorasDia("venres"),
+        sabado: obterHorasDia("sabado"),
+        cambioDisponibilidade: cambioDisp,
+        diaAlternativo: diaAlt,
+        outrasCondicions: document.getElementById("prefOutras").value.trim()
+      };
+
+      var boton = document.getElementById("botonGardarPref");
+      boton.disabled = true;
+      boton.textContent = "Gardando...";
+
+      peticionPost("actualizar_preferencias_admin", datos)
+        .then(function (r) {
+          boton.disabled = false;
+          boton.textContent = "Gardar";
+          if (r.exito) {
+            mostrarNotificacion("Preferencias gardadas", "exito");
+            pecharModal("modalPreferencias");
+          } else {
+            mostrarNotificacion("Erro: " + r.mensaje, "erro");
+          }
+        })
+        .catch(function (e) {
+          boton.disabled = false;
+          boton.textContent = "Gardar";
+          mostrarNotificacion("Erro de conexion: " + e.message, "erro");
+        });
     }
   </script>
 

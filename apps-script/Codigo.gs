@@ -105,6 +105,18 @@ function doPost(e) {
         if (!verificarAdmin(e, cuerpo)) return crearRespuesta({ error: true, mensaje: "Acceso non autorizado" });
         return crearRespuesta(actualizarTelefonoCliente(cuerpo));
 
+      case "crear_cliente":
+        if (!verificarAdmin(e, cuerpo)) return crearRespuesta({ error: true, mensaje: "Acceso non autorizado" });
+        return crearRespuesta(crearCliente(cuerpo));
+
+      case "asignar_cita_admin":
+        if (!verificarAdmin(e, cuerpo)) return crearRespuesta({ error: true, mensaje: "Acceso non autorizado" });
+        return crearRespuesta(asignarCitaAdmin(cuerpo));
+
+      case "actualizar_preferencias_admin":
+        if (!verificarAdmin(e, cuerpo)) return crearRespuesta({ error: true, mensaje: "Acceso non autorizado" });
+        return crearRespuesta(actualizarPreferenciasAdmin(cuerpo));
+
       case "registrar_token_push":
         return crearRespuesta(registrarTokenPush(e, cuerpo));
 
@@ -814,6 +826,170 @@ function actualizarTelefonoCliente(cuerpo) {
 }
 
 // ============================================================
+// CREAR NOVO CLIENTE (ADMIN)
+// ============================================================
+function crearCliente(cuerpo) {
+  var nombre = (cuerpo.nombre || "").toString().trim();
+  var telefono = (cuerpo.telefono || "").toString().trim();
+  var email = (cuerpo.email || "").toString().trim().toLowerCase();
+
+  if (!nombre) {
+    return { exito: false, mensaje: "O nome do cliente é obrigatorio" };
+  }
+
+  if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+    return { exito: false, mensaje: "Formato de email non valido" };
+  }
+
+  var hoja = obtenerHoja(PESTANA_CLIENTES);
+  if (!hoja) {
+    return { exito: false, mensaje: "Non se atopou a folla de clientes" };
+  }
+
+  // Comprobar que non exista xa un cliente co mesmo nome
+  var datos = hoja.getDataRange().getValues();
+  for (var i = 1; i < datos.length; i++) {
+    var nomeFila = datos[i][0] ? datos[i][0].toString().trim().toLowerCase() : "";
+    if (nomeFila === nombre.toLowerCase()) {
+      return { exito: false, mensaje: "Xa existe un cliente con ese nome" };
+    }
+  }
+
+  hoja.appendRow([
+    sanitizarParaCelda(nombre),
+    0, // Total Citas inicial
+    sanitizarParaCelda(email),
+    sanitizarParaCelda(telefono)
+  ]);
+
+  return { exito: true, mensaje: "Cliente creado correctamente" };
+}
+
+// ============================================================
+// ASIGNAR CITA DIRECTA A UN CLIENTE (ADMIN)
+// Similar a aprobar unha cita extra: substitue un slot "Libre" polo cliente
+// ============================================================
+function asignarCitaAdmin(cuerpo) {
+  var nombreCliente = (cuerpo.cliente || "").toString().trim();
+  var fecha = (cuerpo.fecha || "").toString().trim();
+  var hora = (cuerpo.hora || "").toString().trim();
+  var servicio = (cuerpo.servicio || "").toString().trim();
+  var importe = cuerpo.importe;
+
+  if (!nombreCliente || !fecha || !hora || !servicio) {
+    return { exito: false, mensaje: "Faltan parametros: cliente, fecha, hora e servicio son obrigatorios" };
+  }
+
+  var hojaCitas = obtenerHoja(PESTANA_CITAS);
+  if (!hojaCitas) {
+    return { exito: false, mensaje: "Non se atopou a folla de citas" };
+  }
+
+  var datosCitas = hojaCitas.getDataRange().getValues();
+  var fechaFormateada = formatearValorFecha(fecha);
+  var horaFormateada = formatearValorHora(hora);
+  var filaAtopada = -1;
+
+  for (var i = 1; i < datosCitas.length; i++) {
+    var fechaFila = formatearValorFecha(datosCitas[i][0]);
+    var horaFila = formatearValorHora(datosCitas[i][2]);
+    var clienteFila = datosCitas[i][3] ? datosCitas[i][3].toString().trim().toLowerCase() : "";
+
+    if (fechaFila === fechaFormateada && horaFila === horaFormateada && (clienteFila === "libre" || clienteFila === "")) {
+      filaAtopada = i + 1;
+      break;
+    }
+  }
+
+  if (filaAtopada > 0) {
+    hojaCitas.getRange(filaAtopada, 4).setValue(sanitizarParaCelda(nombreCliente));
+    hojaCitas.getRange(filaAtopada, 5).setValue(sanitizarParaCelda(servicio));
+    if (importe !== undefined && importe !== null && importe !== "") {
+      hojaCitas.getRange(filaAtopada, 6).setValue(importe);
+    }
+  } else {
+    // Se non hai slot libre, engadir ao final
+    var fechaObj = parsearFecha(fecha);
+    var nomeDia = "";
+    if (fechaObj) {
+      var NOMES_DIAS = ['Domingo', 'Luns', 'Martes', 'Mercores', 'Xoves', 'Venres', 'Sabado'];
+      nomeDia = NOMES_DIAS[fechaObj.getDay()];
+    }
+    hojaCitas.appendRow([
+      fecha, nomeDia, hora,
+      sanitizarParaCelda(nombreCliente),
+      sanitizarParaCelda(servicio),
+      importe || ""
+    ]);
+  }
+
+  return { exito: true, mensaje: "Cita asignada correctamente" };
+}
+
+// ============================================================
+// ACTUALIZAR PREFERENCIAS DUN CLIENTE (ADMIN)
+// Equivalente a enviarPreferencias pero sen token Firebase,
+// recibe directamente o nome do cliente
+// ============================================================
+function actualizarPreferenciasAdmin(cuerpo) {
+  var nombreCliente = (cuerpo.cliente || "").toString().trim();
+  if (!nombreCliente) {
+    return { exito: false, mensaje: "Falta o parametro: cliente" };
+  }
+
+  var hoja = obtenerOCrearHojaPreferencias();
+  var datos = hoja.getDataRange().getValues();
+
+  var telefono = cuerpo.telefono || "";
+  var servizos = (cuerpo.servizos || []).join(", ");
+  var intervalo = cuerpo.intervalo || "";
+  var luns = (cuerpo.luns || []).join(", ");
+  var martes = (cuerpo.martes || []).join(", ");
+  var mercores = (cuerpo.mercores || []).join(", ");
+  var xoves = (cuerpo.xoves || []).join(", ");
+  var venres = (cuerpo.venres || []).join(", ");
+  var sabado = (cuerpo.sabado || []).join(", ");
+  var cambioDisponibilidade = (cuerpo.cambioDisponibilidade || []).join(", ");
+  var diaAlternativo = (cuerpo.diaAlternativo || []).join(", ");
+  var outrasCondicions = cuerpo.outrasCondicions || "";
+  var dataEnvio = Utilities.formatDate(new Date(), "Europe/Madrid", "dd/MM/yyyy HH:mm:ss");
+
+  var fila = [
+    sanitizarParaCelda(nombreCliente),
+    sanitizarParaCelda(telefono),
+    sanitizarParaCelda(servizos),
+    sanitizarParaCelda(intervalo),
+    sanitizarParaCelda(luns),
+    sanitizarParaCelda(martes),
+    sanitizarParaCelda(mercores),
+    sanitizarParaCelda(xoves),
+    sanitizarParaCelda(venres),
+    sanitizarParaCelda(sabado),
+    sanitizarParaCelda(cambioDisponibilidade),
+    sanitizarParaCelda(diaAlternativo),
+    sanitizarParaCelda(outrasCondicions),
+    sanitizarParaCelda(dataEnvio)
+  ];
+
+  var filaExistente = -1;
+  for (var i = 1; i < datos.length; i++) {
+    var clienteFila = datos[i][0] ? datos[i][0].toString().trim().toLowerCase() : "";
+    if (clienteFila === nombreCliente.toLowerCase()) {
+      filaExistente = i + 1;
+      break;
+    }
+  }
+
+  if (filaExistente > 0) {
+    hoja.getRange(filaExistente, 1, 1, fila.length).setValues([fila]);
+  } else {
+    hoja.appendRow(fila);
+  }
+
+  return { exito: true, mensaje: "Preferencias gardadas correctamente" };
+}
+
+// ============================================================
 // OBTENER TODAS LAS CITAS PROXIMAS (ADMIN)
 // Sin filtrar por cliente
 // ============================================================
@@ -1423,6 +1599,7 @@ function obtenerPreferenciasCliente(e) {
       return {
         exito: true,
         preferencias: {
+          telefono: datos[i][1] ? datos[i][1].toString() : "",
           servizos: datos[i][2] ? datos[i][2].toString() : "",
           intervalo: datos[i][3] ? datos[i][3].toString() : "",
           luns: datos[i][4] ? datos[i][4].toString() : "",
@@ -1430,7 +1607,10 @@ function obtenerPreferenciasCliente(e) {
           mercores: datos[i][6] ? datos[i][6].toString() : "",
           xoves: datos[i][7] ? datos[i][7].toString() : "",
           venres: datos[i][8] ? datos[i][8].toString() : "",
-          sabado: datos[i][9] ? datos[i][9].toString() : ""
+          sabado: datos[i][9] ? datos[i][9].toString() : "",
+          cambioDisponibilidade: datos[i][10] ? datos[i][10].toString() : "",
+          diaAlternativo: datos[i][11] ? datos[i][11].toString() : "",
+          outrasCondicions: datos[i][12] ? datos[i][12].toString() : ""
         }
       };
     }
