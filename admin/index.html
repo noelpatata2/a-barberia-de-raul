@@ -313,6 +313,179 @@
     }
 
     /* ============================================================
+       Dashboard (sección Inicio)
+       ============================================================ */
+    .panel-dashboard {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(340px, 1fr));
+      gap: 20px;
+    }
+
+    .panel-dashboard .tarxeta-dashboard {
+      background-color: var(--cor-tarxeta);
+      border: 1px solid var(--cor-borde);
+      border-radius: var(--radio-borde);
+      padding: 18px 20px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+    }
+
+    .panel-dashboard .tarxeta-dashboard.ancha {
+      grid-column: 1 / -1;
+    }
+
+    .panel-dashboard h3 {
+      margin: 0 0 14px 0;
+      font-size: 15px;
+      color: var(--cor-texto);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .panel-dashboard .kpi-valor {
+      font-size: 28px;
+      font-weight: 700;
+      color: var(--cor-primaria);
+      line-height: 1.1;
+    }
+
+    .panel-dashboard .kpi-etiqueta {
+      font-size: 12px;
+      color: var(--cor-texto-gris);
+      text-transform: uppercase;
+      letter-spacing: 0.4px;
+      margin-top: 4px;
+    }
+
+    .grella-kpis {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+      gap: 16px;
+      margin-bottom: 20px;
+    }
+
+    /* Mapa de calor */
+    .heatmap {
+      display: grid;
+      gap: 3px;
+      overflow-x: auto;
+    }
+
+    .heatmap-celda {
+      aspect-ratio: 1;
+      min-width: 22px;
+      border-radius: 3px;
+      background-color: var(--cor-borde);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 10px;
+      color: var(--cor-texto);
+    }
+
+    .heatmap-celda[data-nivel="0"] { background-color: #F0E8D8; }
+    .heatmap-celda[data-nivel="1"] { background-color: #E4CF91; }
+    .heatmap-celda[data-nivel="2"] { background-color: #C8A84E; }
+    .heatmap-celda[data-nivel="3"] { background-color: #A1841F; }
+    .heatmap-celda[data-nivel="4"] { background-color: #6B5510; color: #fff; }
+
+    .heatmap-eixo-dia {
+      font-size: 11px;
+      color: var(--cor-texto-gris);
+      text-align: right;
+      padding-right: 6px;
+      display: flex;
+      align-items: center;
+      justify-content: flex-end;
+    }
+
+    .heatmap-eixo-hora {
+      font-size: 10px;
+      color: var(--cor-texto-gris);
+      text-align: center;
+    }
+
+    /* Barra horizontal (top clientes) */
+    .barra-fila {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 10px;
+      align-items: center;
+      margin-bottom: 8px;
+      font-size: 13px;
+    }
+
+    .barra-nome {
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .barra-bg {
+      position: relative;
+      height: 18px;
+      background-color: var(--cor-borde);
+      border-radius: 4px;
+      overflow: hidden;
+      margin-top: 2px;
+    }
+
+    .barra-bg-interior {
+      height: 100%;
+      background: linear-gradient(90deg, var(--cor-ouro-claro), var(--cor-primaria));
+      border-radius: 4px;
+    }
+
+    .barra-valor {
+      color: var(--cor-texto-gris);
+      font-variant-numeric: tabular-nums;
+      font-size: 12px;
+    }
+
+    /* Barras verticales (tendencia, franjas) */
+    .barras-v {
+      display: flex;
+      gap: 4px;
+      align-items: flex-end;
+      height: 160px;
+      padding: 0 4px;
+    }
+
+    .barras-v-col {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      min-width: 0;
+    }
+
+    .barras-v-bar {
+      width: 100%;
+      background: linear-gradient(180deg, var(--cor-ouro-claro), var(--cor-primaria));
+      border-radius: 3px 3px 0 0;
+      min-height: 2px;
+      position: relative;
+      transition: opacity 0.15s;
+    }
+
+    .barras-v-bar:hover {
+      opacity: 0.85;
+    }
+
+    .barras-v-label {
+      font-size: 10px;
+      color: var(--cor-texto-gris);
+      margin-top: 5px;
+      white-space: nowrap;
+    }
+
+    .barras-v-valor {
+      font-size: 10px;
+      color: var(--cor-texto);
+      margin-bottom: 2px;
+      font-variant-numeric: tabular-nums;
+    }
+
+    /* ============================================================
        Taboas (para pantallas anchas)
        ============================================================ */
     .contedor-taboa {
@@ -706,7 +879,10 @@
        Navegacion por pestanas
        ============================================================ -->
   <nav class="navegacion-pestanas" id="navegacionPestanas" style="display:none;">
-    <button class="boton-pestana activa" data-pestana="cancelacions" onclick="cambiarPestana('cancelacions')">
+    <button class="boton-pestana activa" data-pestana="inicio" onclick="cambiarPestana('inicio')">
+      Inicio
+    </button>
+    <button class="boton-pestana" data-pestana="cancelacions" onclick="cambiarPestana('cancelacions')">
       Cancelacions
       <span class="contador-pestana" id="contadorCancelacions" style="display:none;">0</span>
     </button>
@@ -734,9 +910,25 @@
   <main class="contido-principal" id="contidoPrincipal" style="display:none;">
 
     <!-- ============================================================
+         Seccion: Inicio (dashboard)
+         ============================================================ -->
+    <section id="seccionInicio" class="panel-seccion visible">
+      <div class="barra-ferramentas">
+        <h2>Resumo</h2>
+        <button class="boton boton-secundario" onclick="cargarInicio()">Actualizar</button>
+      </div>
+      <div id="contidoInicio">
+        <div class="indicador-carga">
+          <div class="spinner"></div>
+          <p>Cargando datos...</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============================================================
          Seccion: Cancelacions
          ============================================================ -->
-    <section id="seccionCancelacions" class="panel-seccion visible">
+    <section id="seccionCancelacions" class="panel-seccion">
       <div class="barra-ferramentas">
         <h2>Solicitudes de Cancelacion</h2>
         <button class="boton boton-secundario" onclick="cargarCancelacions()">Actualizar</button>
@@ -835,7 +1027,7 @@
     // ============================================================
     // Variables globais
     // ============================================================
-    var pestanaActual = "cancelacions";
+    var pestanaActual = "inicio";
     var datosCancelacions = [];
     var datosCitasExtra = [];
     var datosReasignacions = [];
@@ -990,6 +1182,7 @@
       });
 
       var seccionsMapa = {
+        "inicio": "seccionInicio",
         "cancelacions": "seccionCancelacions",
         "citasExtra": "seccionCitasExtra",
         "reasignacions": "seccionReasignacions",
@@ -1097,6 +1290,7 @@
     // Cargar todos os datos
     // ============================================================
     function cargarTodosOsDatos() {
+      cargarInicio();
       cargarCancelacions();
       cargarCitasExtra();
       cargarReasignacions();
@@ -1113,12 +1307,234 @@
       }
       temporizadorActualizacion = setInterval(function () {
         // So actualizar pestanas que NON son a activa, para non borrar o traballo do usuario
+        if (pestanaActual !== "inicio") cargarInicio();
         if (pestanaActual !== "cancelacions") cargarCancelacions();
         if (pestanaActual !== "citasExtra") cargarCitasExtra();
         if (pestanaActual !== "reasignacions") cargarReasignacions();
         if (pestanaActual !== "citas") cargarCitas();
         if (pestanaActual !== "clientes") cargarClientes();
       }, 30000);
+    }
+
+    // ============================================================
+    // INICIO (dashboard)
+    // ============================================================
+    function cargarInicio() {
+      peticionGet("obtener_todas_citas_admin")
+        .then(function (resultado) {
+          if (resultado.exito) {
+            datosCitas = resultado.citas || [];
+            renderizarInicio();
+          } else {
+            mostrarNotificacion("Erro ao cargar datos do dashboard: " + resultado.mensaje, "erro");
+          }
+        })
+        .catch(function (erro) {
+          document.getElementById("contidoInicio").innerHTML =
+            '<div class="mensaxe-baleira"><p>Erro ao conectar co servidor</p><p>' + erro.message + '</p></div>';
+        });
+    }
+
+    function renderizarInicio() {
+      var contedor = document.getElementById("contidoInicio");
+      var citas = datosCitas.filter(function (c) {
+        return c.cliente && c.cliente.toLowerCase() !== "libre" && c.cliente.trim() !== "";
+      });
+
+      if (citas.length === 0) {
+        contedor.innerHTML = '<div class="mensaxe-baleira"><p>Non hai citas futuras asignadas</p></div>';
+        return;
+      }
+
+      // ----- KPIs -----
+      var total = citas.length;
+      var recaudacion = 0;
+      citas.forEach(function (c) {
+        var imp = parseFloat(c.importe) || 0;
+        recaudacion += imp;
+      });
+      var ticketMedio = total > 0 ? (recaudacion / total) : 0;
+
+      var hoxe = new Date();
+      hoxe.setHours(0, 0, 0, 0);
+      var fin7 = new Date(hoxe.getTime() + 7 * 86400000);
+      var fin30 = new Date(hoxe.getTime() + 30 * 86400000);
+
+      var citasSemana = 0;
+      var citasMes = 0;
+      citas.forEach(function (c) {
+        var d = parsearDataCita(c.fecha);
+        if (!d) return;
+        if (d >= hoxe && d < fin7) citasSemana++;
+        if (d >= hoxe && d < fin30) citasMes++;
+      });
+
+      var kpisHtml = '<div class="grella-kpis">';
+      kpisHtml += '  <div class="tarxeta-dashboard"><div class="kpi-valor">' + total + '</div><div class="kpi-etiqueta">Citas totais</div></div>';
+      kpisHtml += '  <div class="tarxeta-dashboard"><div class="kpi-valor">' + citasSemana + '</div><div class="kpi-etiqueta">Próximos 7 días</div></div>';
+      kpisHtml += '  <div class="tarxeta-dashboard"><div class="kpi-valor">' + citasMes + '</div><div class="kpi-etiqueta">Próximos 30 días</div></div>';
+      kpisHtml += '  <div class="tarxeta-dashboard"><div class="kpi-valor">' + recaudacion.toFixed(0) + '€</div><div class="kpi-etiqueta">Recadación estimada</div></div>';
+      kpisHtml += '  <div class="tarxeta-dashboard"><div class="kpi-valor">' + ticketMedio.toFixed(1) + '€</div><div class="kpi-etiqueta">Ticket medio</div></div>';
+      kpisHtml += '</div>';
+
+      // ----- Mapa de calor (día semana x hora) -----
+      var diasNomes = ["Luns", "Martes", "Mércores", "Xoves", "Venres", "Sábado", "Domingo"];
+      var horasSet = {};
+      var matriz = {};
+      diasNomes.forEach(function (d) { matriz[d] = {}; });
+
+      citas.forEach(function (c) {
+        var data = parsearDataCita(c.fecha);
+        if (!data) return;
+        var idxDia = (data.getDay() + 6) % 7; // 0=luns
+        var nomeDia = diasNomes[idxDia];
+        var hora = c.hora ? c.hora.split(":")[0] : null;
+        if (!hora) return;
+        hora = parseInt(hora, 10);
+        if (isNaN(hora)) return;
+        horasSet[hora] = true;
+        matriz[nomeDia][hora] = (matriz[nomeDia][hora] || 0) + 1;
+      });
+
+      var horasOrdenadas = Object.keys(horasSet).map(Number).sort(function (a, b) { return a - b; });
+      var maxCelda = 0;
+      diasNomes.forEach(function (d) {
+        horasOrdenadas.forEach(function (h) {
+          if ((matriz[d][h] || 0) > maxCelda) maxCelda = matriz[d][h];
+        });
+      });
+
+      var heatmapHtml = '<div class="tarxeta-dashboard ancha">';
+      heatmapHtml += '<h3>Mapa de calor — día da semana × hora</h3>';
+      if (horasOrdenadas.length === 0) {
+        heatmapHtml += '<p style="color:var(--cor-texto-gris);font-size:13px;">Sen datos suficientes</p>';
+      } else {
+        heatmapHtml += '<div class="heatmap" style="grid-template-columns: 70px repeat(' + horasOrdenadas.length + ', minmax(22px, 1fr));">';
+        // fila de cabecera
+        heatmapHtml += '<div></div>';
+        horasOrdenadas.forEach(function (h) {
+          heatmapHtml += '<div class="heatmap-eixo-hora">' + h + 'h</div>';
+        });
+        // filas por día
+        diasNomes.forEach(function (d) {
+          heatmapHtml += '<div class="heatmap-eixo-dia">' + d + '</div>';
+          horasOrdenadas.forEach(function (h) {
+            var v = matriz[d][h] || 0;
+            var nivel = v === 0 ? 0 : Math.min(4, Math.ceil((v / maxCelda) * 4));
+            heatmapHtml += '<div class="heatmap-celda" data-nivel="' + nivel + '" title="' + d + ' ' + h + 'h: ' + v + ' cita(s)">' + (v > 0 ? v : '') + '</div>';
+          });
+        });
+        heatmapHtml += '</div>';
+      }
+      heatmapHtml += '</div>';
+
+      // ----- Top clientes -----
+      var contClientes = {};
+      citas.forEach(function (c) {
+        contClientes[c.cliente] = (contClientes[c.cliente] || 0) + 1;
+      });
+      var topClientes = Object.keys(contClientes).map(function (k) {
+        return { nome: k, total: contClientes[k] };
+      }).sort(function (a, b) { return b.total - a.total; }).slice(0, 10);
+
+      var maxTop = topClientes.length > 0 ? topClientes[0].total : 1;
+      var topHtml = '<div class="tarxeta-dashboard">';
+      topHtml += '<h3>Top 10 clientes</h3>';
+      topClientes.forEach(function (c) {
+        var pct = (c.total / maxTop) * 100;
+        topHtml += '<div class="barra-fila">';
+        topHtml += '  <div><div class="barra-nome">' + escaparHtml(c.nome) + '</div><div class="barra-bg"><div class="barra-bg-interior" style="width:' + pct + '%;"></div></div></div>';
+        topHtml += '  <div class="barra-valor">' + c.total + '</div>';
+        topHtml += '</div>';
+      });
+      topHtml += '</div>';
+
+      // ----- Tendencia mensual -----
+      var mesesMap = {};
+      citas.forEach(function (c) {
+        var data = parsearDataCita(c.fecha);
+        if (!data) return;
+        var clave = data.getFullYear() + "-" + ("0" + (data.getMonth() + 1)).slice(-2);
+        mesesMap[clave] = (mesesMap[clave] || 0) + 1;
+      });
+      var mesesKeys = Object.keys(mesesMap).sort();
+      var maxMes = 0;
+      mesesKeys.forEach(function (k) { if (mesesMap[k] > maxMes) maxMes = mesesMap[k]; });
+
+      var nomesMes = ["Xan", "Feb", "Mar", "Abr", "Mai", "Xuñ", "Xul", "Ago", "Set", "Out", "Nov", "Dec"];
+      var tendenciaHtml = '<div class="tarxeta-dashboard">';
+      tendenciaHtml += '<h3>Tendencia mensual</h3>';
+      if (mesesKeys.length === 0) {
+        tendenciaHtml += '<p style="color:var(--cor-texto-gris);font-size:13px;">Sen datos</p>';
+      } else {
+        tendenciaHtml += '<div class="barras-v">';
+        mesesKeys.forEach(function (k) {
+          var v = mesesMap[k];
+          var alt = maxMes > 0 ? (v / maxMes) * 100 : 0;
+          var partes = k.split("-");
+          var etiqueta = nomesMes[parseInt(partes[1], 10) - 1] + " " + partes[0].slice(2);
+          tendenciaHtml += '<div class="barras-v-col" title="' + k + ': ' + v + ' citas">';
+          tendenciaHtml += '  <div class="barras-v-valor">' + v + '</div>';
+          tendenciaHtml += '  <div class="barras-v-bar" style="height:' + alt + '%;"></div>';
+          tendenciaHtml += '  <div class="barras-v-label">' + etiqueta + '</div>';
+          tendenciaHtml += '</div>';
+        });
+        tendenciaHtml += '</div>';
+      }
+      tendenciaHtml += '</div>';
+
+      // ----- Demanda por franja horaria -----
+      var franjas = {};
+      citas.forEach(function (c) {
+        if (!c.hora) return;
+        var h = parseInt(c.hora.split(":")[0], 10);
+        if (isNaN(h)) return;
+        franjas[h] = (franjas[h] || 0) + 1;
+      });
+      var franjasKeys = Object.keys(franjas).map(Number).sort(function (a, b) { return a - b; });
+      var maxFranja = 0;
+      franjasKeys.forEach(function (h) { if (franjas[h] > maxFranja) maxFranja = franjas[h]; });
+
+      var franjasHtml = '<div class="tarxeta-dashboard ancha">';
+      franjasHtml += '<h3>Demanda por franxa horaria</h3>';
+      if (franjasKeys.length === 0) {
+        franjasHtml += '<p style="color:var(--cor-texto-gris);font-size:13px;">Sen datos</p>';
+      } else {
+        franjasHtml += '<div class="barras-v">';
+        franjasKeys.forEach(function (h) {
+          var v = franjas[h];
+          var alt = maxFranja > 0 ? (v / maxFranja) * 100 : 0;
+          franjasHtml += '<div class="barras-v-col" title="' + h + 'h: ' + v + ' citas">';
+          franjasHtml += '  <div class="barras-v-valor">' + v + '</div>';
+          franjasHtml += '  <div class="barras-v-bar" style="height:' + alt + '%;"></div>';
+          franjasHtml += '  <div class="barras-v-label">' + h + 'h</div>';
+          franjasHtml += '</div>';
+        });
+        franjasHtml += '</div>';
+      }
+      franjasHtml += '</div>';
+
+      // ----- Composicion final -----
+      var html = kpisHtml;
+      html += '<div class="panel-dashboard">';
+      html += heatmapHtml;
+      html += topHtml;
+      html += tendenciaHtml;
+      html += franjasHtml;
+      html += '</div>';
+
+      contedor.innerHTML = html;
+    }
+
+    function parsearDataCita(texto) {
+      if (!texto) return null;
+      var partes = texto.split("/");
+      if (partes.length !== 3) return null;
+      var dia = parseInt(partes[0], 10);
+      var mes = parseInt(partes[1], 10) - 1;
+      var ano = parseInt(partes[2], 10);
+      if (isNaN(dia) || isNaN(mes) || isNaN(ano)) return null;
+      return new Date(ano, mes, dia);
     }
 
     // ============================================================
