@@ -290,6 +290,11 @@ function solicitarCancelacion(e, cuerpo) {
     "Pendiente"
   ]);
 
+  enviarTelegramAdmin("🔔 <b>Nova CANCELACIÓN</b>\n" +
+    "Cliente: " + nombreCliente + "\n" +
+    "Data: " + (cuerpo.fechaCita || "-") + " " + (cuerpo.horaCita || "") + "\n" +
+    "Servizo: " + (cuerpo.servicio || "-"));
+
   return { exito: true, mensaje: "Solicitud de cancelacion enviada" };
 }
 
@@ -371,6 +376,12 @@ function solicitarCitaExtra(e, cuerpo) {
     sanitizarParaCelda(fechaSolicitud),
     "Pendente"
   ]);
+
+  enviarTelegramAdmin("🔔 <b>Nova CITA EXTRA</b>\n" +
+    "Cliente: " + nombreCliente + "\n" +
+    "Servizo: " + (cuerpo.servicio || "-") + "\n" +
+    "Data preferida: " + (cuerpo.fecha || "-") + " " + (cuerpo.hora || "") +
+    (cuerpo.nota ? "\nNota: " + cuerpo.nota : ""));
 
   return { exito: true, mensaje: "Solicitude de cita extra enviada" };
 }
@@ -1082,6 +1093,13 @@ function solicitarReasignacion(e, cuerpo) {
     "Pendente"
   ]);
 
+  enviarTelegramAdmin("🔔 <b>Nova REASIGNACIÓN</b>\n" +
+    "Cliente: " + nombreCliente + "\n" +
+    "Cita actual: " + (cuerpo.fechaCita || "-") + " " + (cuerpo.horaCita || "") + "\n" +
+    "Servizo: " + (cuerpo.servicio || "-") +
+    (cuerpo.motivo ? "\nMotivo: " + cuerpo.motivo : "") +
+    (cuerpo.comentario ? "\nComentario: " + cuerpo.comentario : ""));
+
   return { exito: true, mensaje: "Solicitude de reasignacion enviada" };
 }
 
@@ -1721,4 +1739,31 @@ function crearRespuesta(datos) {
   var salida = ContentService.createTextOutput(JSON.stringify(datos));
   salida.setMimeType(ContentService.MimeType.JSON);
   return salida;
+}
+
+// ============================================================
+// NOTIFICACIÓN POR TELEGRAM AO ADMIN
+// ============================================================
+function enviarTelegramAdmin(texto) {
+  try {
+    var props = PropertiesService.getScriptProperties();
+    var token = props.getProperty("TELEGRAM_BOT_TOKEN");
+    var chatId = props.getProperty("TELEGRAM_ADMIN_CHAT_ID");
+    if (!token || !chatId) {
+      Logger.log("Telegram: faltan credenciais en Script Properties");
+      return;
+    }
+    UrlFetchApp.fetch("https://api.telegram.org/bot" + token + "/sendMessage", {
+      method: "post",
+      payload: {
+        chat_id: chatId,
+        text: texto,
+        parse_mode: "HTML",
+        disable_web_page_preview: "true"
+      },
+      muteHttpExceptions: true
+    });
+  } catch (e) {
+    Logger.log("Erro enviando Telegram: " + e.message);
+  }
 }
