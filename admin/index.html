@@ -2635,7 +2635,7 @@
         htmlTaboa += '<td><span class="nome-cliente-clickable" onclick="abrirFichaCliente(\'' + nomeAttr + '\')">' + escaparHtml(cliente.nombre) + '</span>';
         htmlTaboa += '  <div style="margin-top:4px;">';
         htmlTaboa += '    <button class="boton-accion-cliente" onclick="event.stopPropagation(); abrirFichaCliente(\'' + nomeAttr + '\')">Ficha</button>';
-        htmlTaboa += '    <button class="boton-accion-cliente" onclick="event.stopPropagation(); abrirModalAsignarCita(\'' + nomeAttr + '\')">Cita</button>';
+        htmlTaboa += '    <button class="boton-accion-cliente" onclick="event.stopPropagation(); abrirModalAsignarCita(\'' + nomeAttr + '\')">Nova Cita</button>';
         htmlTaboa += '    <button class="boton-accion-cliente" onclick="event.stopPropagation(); abrirModalPreferencias(\'' + nomeAttr + '\')">Preferencias</button>';
         htmlTaboa += '  </div>';
         htmlTaboa += '</td>';
@@ -2666,7 +2666,7 @@
         htmlTarxetas += '    <div class="tarxeta-campo"><span class="etiqueta">Total citas</span><span class="valor">' + escaparHtml(String(cliente.totalCitas)) + '</span></div>';
         htmlTarxetas += '  </div>';
         htmlTarxetas += '  <div style="display:flex;gap:6px;margin-top:10px;">';
-        htmlTarxetas += '    <button class="boton-accion-cliente" onclick="event.stopPropagation(); abrirModalAsignarCita(\'' + nomeAttr + '\')">Cita</button>';
+        htmlTarxetas += '    <button class="boton-accion-cliente" onclick="event.stopPropagation(); abrirModalAsignarCita(\'' + nomeAttr + '\')">Nova Cita</button>';
         htmlTarxetas += '    <button class="boton-accion-cliente" onclick="event.stopPropagation(); abrirModalPreferencias(\'' + nomeAttr + '\')">Preferencias</button>';
         htmlTarxetas += '  </div>';
         htmlTarxetas += '  <div style="margin-top: 10px;" onclick="event.stopPropagation();">';

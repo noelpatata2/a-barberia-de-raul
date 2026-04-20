@@ -986,6 +986,25 @@ function actualizarPreferenciasAdmin(cuerpo) {
     hoja.appendRow(fila);
   }
 
+  // Propagar telefono a folla Clientes (columna D) se se proporcionou
+  if (telefono && telefono.toString().trim() !== "") {
+    try {
+      var hojaClientes = obtenerHoja(PESTANA_CLIENTES);
+      if (hojaClientes) {
+        var datosCli = hojaClientes.getDataRange().getValues();
+        for (var k = 1; k < datosCli.length; k++) {
+          var nomeFila = datosCli[k][0] ? datosCli[k][0].toString().trim().toLowerCase() : "";
+          if (nomeFila === nombreCliente.toLowerCase()) {
+            hojaClientes.getRange(k + 1, 4).setValue(sanitizarParaCelda(telefono.toString().trim()));
+            break;
+          }
+        }
+      }
+    } catch (e) {
+      Logger.log("Erro propagando telefono a Clientes: " + e.message);
+    }
+  }
+
   return { exito: true, mensaje: "Preferencias gardadas correctamente" };
 }
 
