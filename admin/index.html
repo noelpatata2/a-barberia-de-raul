@@ -1101,6 +1101,9 @@
       Clientes
       <span class="contador-pestana" id="contadorClientes" style="display:none;">0</span>
     </button>
+    <button class="boton-pestana" onclick="abrirGoogleCalendar()" title="Abrir Google Calendar nunha nova lapela">
+      Calendario ↗
+    </button>
   </nav>
 
   <!-- ============================================================
@@ -2933,6 +2936,10 @@
       var nome = document.getElementById("fichaClienteNome").value;
       pecharModal("modalFichaCliente");
       abrirModalPreferencias(nome);
+    }
+
+    function abrirGoogleCalendar() {
+      window.open("https://calendar.google.com/", "_blank", "noopener");
     }
 
     // ----- Novo cliente -----
