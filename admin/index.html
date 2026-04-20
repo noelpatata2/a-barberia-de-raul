@@ -458,6 +458,57 @@
       color: var(--cor-primaria);
     }
 
+    .nome-cliente-clickable {
+      cursor: pointer;
+      font-weight: 600;
+      color: var(--cor-texto);
+    }
+
+    .nome-cliente-clickable:hover {
+      color: var(--cor-primaria);
+      text-decoration: underline;
+    }
+
+    .ficha-seccion {
+      margin-bottom: 16px;
+    }
+
+    .ficha-seccion h4 {
+      margin: 0 0 8px 0;
+      font-size: 13px;
+      color: var(--cor-primaria);
+      text-transform: uppercase;
+      letter-spacing: 0.3px;
+    }
+
+    .ficha-cita-item {
+      display: grid;
+      grid-template-columns: 110px 70px 1fr auto;
+      gap: 10px;
+      padding: 6px 0;
+      border-bottom: 1px dashed var(--cor-borde);
+      font-size: 13px;
+    }
+
+    .ficha-cita-item:last-child {
+      border-bottom: none;
+    }
+
+    .ficha-pref-linea {
+      display: grid;
+      grid-template-columns: 130px 1fr;
+      gap: 10px;
+      padding: 4px 0;
+      font-size: 13px;
+    }
+
+    .ficha-pref-linea .etiq {
+      color: var(--cor-texto-gris);
+      text-transform: uppercase;
+      font-size: 11px;
+      letter-spacing: 0.3px;
+    }
+
     /* ============================================================
        Dashboard (sección Inicio)
        ============================================================ */
@@ -1156,6 +1207,24 @@
     </section>
 
   </main>
+
+  <!-- ============================================================
+       Modal: Ficha cliente (vista resumen)
+       ============================================================ -->
+  <div class="modal-overlay" id="modalFichaCliente" onclick="if(event.target===this) pecharModal('modalFichaCliente')">
+    <div class="modal" style="max-width:640px;">
+      <h3 id="tituloModalFicha">Cliente</h3>
+      <input type="hidden" id="fichaClienteNome">
+      <div id="contidoFichaCliente">
+        <div class="indicador-carga"><div class="spinner"></div><p>Cargando...</p></div>
+      </div>
+      <div class="modal-acciones">
+        <button class="boton boton-secundario" onclick="pecharModal('modalFichaCliente')">Pechar</button>
+        <button class="boton boton-gardar" onclick="abrirEditarPreferenciasDesdeFicha()">Editar preferencias</button>
+        <button class="boton boton-gardar" onclick="abrirNovaCitaDesdeFicha()">Nova cita</button>
+      </div>
+    </div>
+  </div>
 
   <!-- ============================================================
        Modal: Novo cliente
@@ -2563,10 +2632,11 @@
       datosClientes.forEach(function (cliente) {
         var nomeAttr = escaparAtributo(cliente.nombre);
         htmlTaboa += '<tr id="filaCliente' + cliente.indice + '">';
-        htmlTaboa += '<td>' + escaparHtml(cliente.nombre);
+        htmlTaboa += '<td><span class="nome-cliente-clickable" onclick="abrirFichaCliente(\'' + nomeAttr + '\')">' + escaparHtml(cliente.nombre) + '</span>';
         htmlTaboa += '  <div style="margin-top:4px;">';
-        htmlTaboa += '    <button class="boton-accion-cliente" onclick="abrirModalAsignarCita(\'' + nomeAttr + '\')">Cita</button>';
-        htmlTaboa += '    <button class="boton-accion-cliente" onclick="abrirModalPreferencias(\'' + nomeAttr + '\')">Preferencias</button>';
+        htmlTaboa += '    <button class="boton-accion-cliente" onclick="event.stopPropagation(); abrirFichaCliente(\'' + nomeAttr + '\')">Ficha</button>';
+        htmlTaboa += '    <button class="boton-accion-cliente" onclick="event.stopPropagation(); abrirModalAsignarCita(\'' + nomeAttr + '\')">Cita</button>';
+        htmlTaboa += '    <button class="boton-accion-cliente" onclick="event.stopPropagation(); abrirModalPreferencias(\'' + nomeAttr + '\')">Preferencias</button>';
         htmlTaboa += '  </div>';
         htmlTaboa += '</td>';
         htmlTaboa += '<td>' + escaparHtml(String(cliente.totalCitas)) + '</td>';
@@ -2588,7 +2658,7 @@
 
       datosClientes.forEach(function (cliente) {
         var nomeAttr = escaparAtributo(cliente.nombre);
-        htmlTarxetas += '<div class="tarxeta">';
+        htmlTarxetas += '<div class="tarxeta" style="cursor:pointer;" onclick="abrirFichaCliente(\'' + nomeAttr + '\')">';
         htmlTarxetas += '  <div class="tarxeta-cabeceira">';
         htmlTarxetas += '    <span class="tarxeta-titulo">' + escaparHtml(cliente.nombre) + '</span>';
         htmlTarxetas += '  </div>';
@@ -2596,17 +2666,17 @@
         htmlTarxetas += '    <div class="tarxeta-campo"><span class="etiqueta">Total citas</span><span class="valor">' + escaparHtml(String(cliente.totalCitas)) + '</span></div>';
         htmlTarxetas += '  </div>';
         htmlTarxetas += '  <div style="display:flex;gap:6px;margin-top:10px;">';
-        htmlTarxetas += '    <button class="boton-accion-cliente" onclick="abrirModalAsignarCita(\'' + nomeAttr + '\')">Cita</button>';
-        htmlTarxetas += '    <button class="boton-accion-cliente" onclick="abrirModalPreferencias(\'' + nomeAttr + '\')">Preferencias</button>';
+        htmlTarxetas += '    <button class="boton-accion-cliente" onclick="event.stopPropagation(); abrirModalAsignarCita(\'' + nomeAttr + '\')">Cita</button>';
+        htmlTarxetas += '    <button class="boton-accion-cliente" onclick="event.stopPropagation(); abrirModalPreferencias(\'' + nomeAttr + '\')">Preferencias</button>';
         htmlTarxetas += '  </div>';
-        htmlTarxetas += '  <div style="margin-top: 10px;">';
+        htmlTarxetas += '  <div style="margin-top: 10px;" onclick="event.stopPropagation();">';
         htmlTarxetas += '    <label style="font-size: 0.75rem; color: var(--cor-texto-gris); display: block; margin-bottom: 4px;">Email</label>';
         htmlTarxetas += '    <div style="display: flex; gap: 8px;">';
         htmlTarxetas += '      <input type="email" id="emailClienteMovil' + cliente.indice + '" value="' + escaparAtributo(cliente.email) + '" placeholder="Sen email vinculado" style="flex:1; padding: 8px 10px; background-color: var(--cor-fondo); border: 1px solid var(--cor-borde); border-radius: 6px; color: var(--cor-texto); font-size: 0.85rem;">';
         htmlTarxetas += '      <button class="boton boton-gardar" onclick="gardarEmailMovil(' + cliente.indice + ', this)">Gardar</button>';
         htmlTarxetas += '    </div>';
         htmlTarxetas += '  </div>';
-        htmlTarxetas += '  <div style="margin-top: 10px;">';
+        htmlTarxetas += '  <div style="margin-top: 10px;" onclick="event.stopPropagation();">';
         htmlTarxetas += '    <label style="font-size: 0.75rem; color: var(--cor-texto-gris); display: block; margin-bottom: 4px;">Telefono</label>';
         htmlTarxetas += '    <div style="display: flex; gap: 8px;">';
         htmlTarxetas += '      <input type="tel" id="telefonoClienteMovil' + cliente.indice + '" value="' + escaparAtributo(cliente.telefono || "") + '" placeholder="Sen telefono" style="flex:1; padding: 8px 10px; background-color: var(--cor-fondo); border: 1px solid var(--cor-borde); border-radius: 6px; color: var(--cor-texto); font-size: 0.85rem;">';
@@ -2756,7 +2826,7 @@
     }
 
     // ============================================================
-    // MODALES (novo cliente / asignar cita / preferencias)
+    // MODALES (ficha / novo cliente / asignar cita / preferencias)
     // ============================================================
     function abrirModal(id) {
       document.getElementById(id).classList.add("visible");
@@ -2768,9 +2838,102 @@
 
     document.addEventListener("keydown", function (ev) {
       if (ev.key === "Escape") {
-        ["modalNovoCliente", "modalAsignarCita", "modalPreferencias"].forEach(pecharModal);
+        ["modalFichaCliente", "modalNovoCliente", "modalAsignarCita", "modalPreferencias"].forEach(pecharModal);
       }
     });
+
+    // ----- Ficha cliente (vista resumen) -----
+    function abrirFichaCliente(nomeCliente) {
+      document.getElementById("tituloModalFicha").textContent = nomeCliente;
+      document.getElementById("fichaClienteNome").value = nomeCliente;
+      document.getElementById("contidoFichaCliente").innerHTML = '<div class="indicador-carga"><div class="spinner"></div><p>Cargando...</p></div>';
+      abrirModal("modalFichaCliente");
+      renderizarFichaCliente(nomeCliente);
+    }
+
+    function renderizarFichaCliente(nomeCliente) {
+      // Citas do cliente: filtrar datosCitas (cargado en pestana Citas/Inicio)
+      var citas = (datosCitas || []).filter(function (c) {
+        return c.cliente && c.cliente.toLowerCase() === nomeCliente.toLowerCase();
+      });
+
+      // Ordenar por data+hora
+      citas.sort(function (a, b) {
+        var fa = parsearDataCita(a.fecha);
+        var fb = parsearDataCita(b.fecha);
+        if (!fa || !fb) return 0;
+        if (fa.getTime() !== fb.getTime()) return fa - fb;
+        return (a.hora || "").localeCompare(b.hora || "");
+      });
+
+      var htmlCitas = '<div class="ficha-seccion">';
+      htmlCitas += '<h4>Próximas citas (' + citas.length + ')</h4>';
+      if (citas.length === 0) {
+        htmlCitas += '<p style="color:var(--cor-texto-gris);font-size:13px;margin:0;">Non hai citas asignadas</p>';
+      } else {
+        citas.forEach(function (c) {
+          htmlCitas += '<div class="ficha-cita-item">';
+          htmlCitas += '  <span>' + escaparHtml(c.fecha) + '</span>';
+          htmlCitas += '  <span>' + escaparHtml(c.hora) + '</span>';
+          htmlCitas += '  <span>' + escaparHtml(c.servicio || "-") + '</span>';
+          htmlCitas += '  <span style="color:var(--cor-texto-gris);">' + formatearImporte(c.importe) + '</span>';
+          htmlCitas += '</div>';
+        });
+      }
+      htmlCitas += '</div>';
+
+      // Contenedor provisional
+      document.getElementById("contidoFichaCliente").innerHTML =
+        htmlCitas +
+        '<div class="ficha-seccion" id="fichaPrefsSeccion"><h4>Preferencias</h4>' +
+        '<p style="color:var(--cor-texto-gris);font-size:13px;margin:0;">Cargando preferencias...</p></div>';
+
+      // Cargar preferencias
+      peticionGet("obtener_preferencias_cliente", { cliente: nomeCliente })
+        .then(function (r) {
+          var seccion = document.getElementById("fichaPrefsSeccion");
+          if (!seccion) return;
+          if (!r.exito || !r.preferencias) {
+            seccion.innerHTML = '<h4>Preferencias</h4><p style="color:var(--cor-texto-gris);font-size:13px;margin:0;">Sen preferencias gardadas</p>';
+            return;
+          }
+          var p = r.preferencias;
+          var html = '<h4>Preferencias</h4>';
+          html += filaPref("Servizos", p.servizos);
+          html += filaPref("Intervalo", p.intervalo);
+          html += filaPref("Luns", p.luns);
+          html += filaPref("Martes", p.martes);
+          html += filaPref("Mércores", p.mercores);
+          html += filaPref("Xoves", p.xoves);
+          html += filaPref("Venres", p.venres);
+          html += filaPref("Sábado", p.sabado);
+          html += filaPref("Cambio disp.", p.cambioDisponibilidade);
+          html += filaPref("Día alternativo", p.diaAlternativo);
+          html += filaPref("Outras condicións", p.outrasCondicions);
+          seccion.innerHTML = html;
+        })
+        .catch(function () {
+          var seccion = document.getElementById("fichaPrefsSeccion");
+          if (seccion) seccion.innerHTML = '<h4>Preferencias</h4><p style="color:var(--cor-erro);font-size:13px;margin:0;">Erro ao cargar preferencias</p>';
+        });
+    }
+
+    function filaPref(etiqueta, valor) {
+      if (!valor) return '';
+      return '<div class="ficha-pref-linea"><span class="etiq">' + escaparHtml(etiqueta) + '</span><span>' + escaparHtml(valor) + '</span></div>';
+    }
+
+    function abrirNovaCitaDesdeFicha() {
+      var nome = document.getElementById("fichaClienteNome").value;
+      pecharModal("modalFichaCliente");
+      abrirModalAsignarCita(nome);
+    }
+
+    function abrirEditarPreferenciasDesdeFicha() {
+      var nome = document.getElementById("fichaClienteNome").value;
+      pecharModal("modalFichaCliente");
+      abrirModalPreferencias(nome);
+    }
 
     // ----- Novo cliente -----
     function abrirModalNovoCliente() {
