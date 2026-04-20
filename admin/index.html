@@ -1700,10 +1700,39 @@
         });
     }
 
+    var CHAVE_CITAS_EXTRA_OCULTAS = "citasExtraOcultas";
+
+    function obterCitasExtraOcultas() {
+      try {
+        var raw = localStorage.getItem(CHAVE_CITAS_EXTRA_OCULTAS);
+        return raw ? JSON.parse(raw) : [];
+      } catch (e) {
+        return [];
+      }
+    }
+
+    function gardarCitasExtraOcultas(lista) {
+      localStorage.setItem(CHAVE_CITAS_EXTRA_OCULTAS, JSON.stringify(lista));
+    }
+
+    function ocultarCitaExtra(indice) {
+      var ocultas = obterCitasExtraOcultas();
+      if (ocultas.indexOf(indice) === -1) {
+        ocultas.push(indice);
+        gardarCitasExtraOcultas(ocultas);
+      }
+      renderizarCitasExtra();
+    }
+
     function renderizarCitasExtra() {
       var contedor = document.getElementById("contidoCitasExtra");
+      var ocultas = obterCitasExtraOcultas();
 
-      var pendentes = datosCitasExtra.filter(function (c) {
+      var visibles = datosCitasExtra.filter(function (c) {
+        return ocultas.indexOf(c.indice) === -1;
+      });
+
+      var pendentes = visibles.filter(function (c) {
         return c.estado === "Pendente";
       });
 
@@ -1715,12 +1744,12 @@
         contadorElemento.style.display = "none";
       }
 
-      if (datosCitasExtra.length === 0) {
+      if (visibles.length === 0) {
         contedor.innerHTML = '<div class="mensaxe-baleira"><p>Non hai solicitudes de cita extra</p></div>';
         return;
       }
 
-      var ordenadas = datosCitasExtra.slice().sort(function (a, b) {
+      var ordenadas = visibles.slice().sort(function (a, b) {
         if (a.estado === "Pendente" && b.estado !== "Pendente") return -1;
         if (a.estado !== "Pendente" && b.estado === "Pendente") return 1;
         return 0;
@@ -1754,6 +1783,10 @@
           html += '  <div class="grupo-botons">';
           html += '    <button class="boton boton-aprobar" onclick="procesarCitaExtra(' + solicitude.indice + ', \'Aprobada\', this)">Aprobar</button>';
           html += '    <button class="boton boton-denegar" onclick="procesarCitaExtra(' + solicitude.indice + ', \'Denegada\', this)">Denegar</button>';
+          html += '  </div>';
+        } else {
+          html += '  <div class="grupo-botons" style="justify-content:flex-end;">';
+          html += '    <button class="boton-papeleira" title="Eliminar da vista" onclick="ocultarCitaExtra(' + solicitude.indice + ')">&#128465;</button>';
           html += '  </div>';
         }
 
