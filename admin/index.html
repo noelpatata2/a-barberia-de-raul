@@ -534,18 +534,20 @@
       gap: 8px;
     }
 
-    .taboa-admin .campo-email input {
+    .taboa-admin input[type="email"],
+    .taboa-admin input[type="tel"] {
       padding: 6px 10px;
       background-color: var(--cor-fondo);
       border: 1px solid var(--cor-borde);
       border-radius: 6px;
       color: var(--cor-texto);
       font-size: 0.85rem;
-      width: 200px;
+      width: 100%;
       max-width: 100%;
     }
 
-    .taboa-admin .campo-email input:focus {
+    .taboa-admin input[type="email"]:focus,
+    .taboa-admin input[type="tel"]:focus {
       outline: none;
       border-color: var(--cor-primaria);
     }
@@ -2300,7 +2302,6 @@
       htmlTaboa += '<th>Total Citas</th>';
       htmlTaboa += '<th>Email</th>';
       htmlTaboa += '<th>Telefono</th>';
-      htmlTaboa += '<th>Accions</th>';
       htmlTaboa += '</tr></thead>';
       htmlTaboa += '<tbody>';
 
@@ -2308,11 +2309,14 @@
         htmlTaboa += '<tr id="filaCliente' + cliente.indice + '">';
         htmlTaboa += '<td>' + escaparHtml(cliente.nombre) + '</td>';
         htmlTaboa += '<td>' + escaparHtml(String(cliente.totalCitas)) + '</td>';
-        htmlTaboa += '<td><div class="campo-email">';
-        htmlTaboa += '<input type="email" id="emailCliente' + cliente.indice + '" value="' + escaparAtributo(cliente.email) + '" placeholder="Sen email vinculado">';
+        htmlTaboa += '<td><div style="display:flex;gap:6px;align-items:center;">';
+        htmlTaboa += '<input type="email" id="emailCliente' + cliente.indice + '" value="' + escaparAtributo(cliente.email) + '" placeholder="Sen email vinculado" style="flex:1;">';
+        htmlTaboa += '<button class="boton boton-gardar" onclick="gardarEmail(' + cliente.indice + ', this)">Gardar</button>';
         htmlTaboa += '</div></td>';
-        htmlTaboa += '<td>' + escaparHtml(cliente.telefono || "-") + '</td>';
-        htmlTaboa += '<td><button class="boton boton-gardar" onclick="gardarEmail(' + cliente.indice + ', this)">Gardar</button></td>';
+        htmlTaboa += '<td><div style="display:flex;gap:6px;align-items:center;">';
+        htmlTaboa += '<input type="tel" id="telefonoCliente' + cliente.indice + '" value="' + escaparAtributo(cliente.telefono || "") + '" placeholder="Sen telefono" style="flex:1;">';
+        htmlTaboa += '<button class="boton boton-gardar" onclick="gardarTelefono(' + cliente.indice + ', this)">Gardar</button>';
+        htmlTaboa += '</div></td>';
         htmlTaboa += '</tr>';
       });
 
@@ -2328,13 +2332,19 @@
         htmlTarxetas += '  </div>';
         htmlTarxetas += '  <div class="tarxeta-corpo">';
         htmlTarxetas += '    <div class="tarxeta-campo"><span class="etiqueta">Total citas</span><span class="valor">' + escaparHtml(String(cliente.totalCitas)) + '</span></div>';
-        htmlTarxetas += '    <div class="tarxeta-campo"><span class="etiqueta">Telefono</span><span class="valor">' + escaparHtml(cliente.telefono || "-") + '</span></div>';
         htmlTarxetas += '  </div>';
         htmlTarxetas += '  <div style="margin-top: 10px;">';
         htmlTarxetas += '    <label style="font-size: 0.75rem; color: var(--cor-texto-gris); display: block; margin-bottom: 4px;">Email</label>';
         htmlTarxetas += '    <div style="display: flex; gap: 8px;">';
         htmlTarxetas += '      <input type="email" id="emailClienteMovil' + cliente.indice + '" value="' + escaparAtributo(cliente.email) + '" placeholder="Sen email vinculado" style="flex:1; padding: 8px 10px; background-color: var(--cor-fondo); border: 1px solid var(--cor-borde); border-radius: 6px; color: var(--cor-texto); font-size: 0.85rem;">';
         htmlTarxetas += '      <button class="boton boton-gardar" onclick="gardarEmailMovil(' + cliente.indice + ', this)">Gardar</button>';
+        htmlTarxetas += '    </div>';
+        htmlTarxetas += '  </div>';
+        htmlTarxetas += '  <div style="margin-top: 10px;">';
+        htmlTarxetas += '    <label style="font-size: 0.75rem; color: var(--cor-texto-gris); display: block; margin-bottom: 4px;">Telefono</label>';
+        htmlTarxetas += '    <div style="display: flex; gap: 8px;">';
+        htmlTarxetas += '      <input type="tel" id="telefonoClienteMovil' + cliente.indice + '" value="' + escaparAtributo(cliente.telefono || "") + '" placeholder="Sen telefono" style="flex:1; padding: 8px 10px; background-color: var(--cor-fondo); border: 1px solid var(--cor-borde); border-radius: 6px; color: var(--cor-texto); font-size: 0.85rem;">';
+        htmlTarxetas += '      <button class="boton boton-gardar" onclick="gardarTelefonoMovil(' + cliente.indice + ', this)">Gardar</button>';
         htmlTarxetas += '    </div>';
         htmlTarxetas += '  </div>';
         htmlTarxetas += '</div>';
@@ -2369,6 +2379,41 @@
         .then(function (resultado) {
           if (resultado.exito) {
             mostrarNotificacion("Email actualizado correctamente", "exito");
+          } else {
+            mostrarNotificacion("Erro: " + resultado.mensaje, "erro");
+          }
+          botonPulsado.disabled = false;
+          botonPulsado.textContent = textoOrixinal;
+        })
+        .catch(function (erro) {
+          mostrarNotificacion("Erro de conexion: " + erro.message, "erro");
+          botonPulsado.disabled = false;
+          botonPulsado.textContent = textoOrixinal;
+        });
+    }
+
+    function gardarTelefono(indice, botonPulsado) {
+      var campo = document.getElementById("telefonoCliente" + indice);
+      enviarActualizacionTelefono(indice, campo.value.trim(), botonPulsado);
+    }
+
+    function gardarTelefonoMovil(indice, botonPulsado) {
+      var campo = document.getElementById("telefonoClienteMovil" + indice);
+      enviarActualizacionTelefono(indice, campo.value.trim(), botonPulsado);
+    }
+
+    function enviarActualizacionTelefono(indice, telefono, botonPulsado) {
+      botonPulsado.disabled = true;
+      var textoOrixinal = botonPulsado.textContent;
+      botonPulsado.textContent = "Gardando...";
+
+      peticionPost("actualizar_telefono_cliente", {
+        indice: indice,
+        telefono: telefono
+      })
+        .then(function (resultado) {
+          if (resultado.exito) {
+            mostrarNotificacion("Telefono actualizado correctamente", "exito");
           } else {
             mostrarNotificacion("Erro: " + resultado.mensaje, "erro");
           }

@@ -101,6 +101,10 @@ function doPost(e) {
         if (!verificarAdmin(e, cuerpo)) return crearRespuesta({ error: true, mensaje: "Acceso non autorizado" });
         return crearRespuesta(actualizarEmailCliente(cuerpo));
 
+      case "actualizar_telefono_cliente":
+        if (!verificarAdmin(e, cuerpo)) return crearRespuesta({ error: true, mensaje: "Acceso non autorizado" });
+        return crearRespuesta(actualizarTelefonoCliente(cuerpo));
+
       case "registrar_token_push":
         return crearRespuesta(registrarTokenPush(e, cuerpo));
 
@@ -779,6 +783,34 @@ function actualizarEmailCliente(cuerpo) {
   hoja.getRange(indice, 3).setValue(sanitizarParaCelda(emailLimpio));
 
   return { exito: true, mensaje: "Email actualizado correctamente" };
+}
+
+// ============================================================
+// ACTUALIZAR TELEFONO DE UN CLIENTE (ADMIN)
+// ============================================================
+function actualizarTelefonoCliente(cuerpo) {
+  var indice = cuerpo.indice;
+  var telefono = cuerpo.telefono;
+
+  if (!indice) {
+    return { exito: false, mensaje: "Falta o parametro: indice" };
+  }
+
+  if (telefono === undefined || telefono === null) {
+    return { exito: false, mensaje: "Falta o parametro: telefono" };
+  }
+
+  var telefonoLimpio = telefono.toString().trim();
+
+  var hoja = obtenerHoja(PESTANA_CLIENTES);
+
+  if (!hoja) {
+    return { exito: false, mensaje: "Non se atopou a folla de clientes" };
+  }
+
+  hoja.getRange(indice, 4).setValue(sanitizarParaCelda(telefonoLimpio));
+
+  return { exito: true, mensaje: "Telefono actualizado correctamente" };
 }
 
 // ============================================================
