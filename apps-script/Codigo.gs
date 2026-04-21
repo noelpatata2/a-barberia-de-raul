@@ -137,6 +137,10 @@ function doPost(e) {
         if (!verificarAdmin(e, cuerpo)) return crearRespuesta({ error: true, mensaje: "Acceso non autorizado" });
         return crearRespuesta(actualizarReasignacion(cuerpo));
 
+      case "eliminar_reasignacion":
+        if (!verificarAdmin(e, cuerpo)) return crearRespuesta({ error: true, mensaje: "Acceso non autorizado" });
+        return crearRespuesta(eliminarReasignacion(cuerpo));
+
       default:
         return crearRespuesta({ error: true, mensaje: "Accion no reconocida" });
     }
@@ -386,8 +390,8 @@ function solicitarCitaExtra(e, cuerpo) {
   hoja.appendRow([
     sanitizarParaCelda(nombreCliente),
     sanitizarParaCelda(cuerpo.servicio || ""),
-    sanitizarParaCelda(cuerpo.fecha || ""),
-    sanitizarParaCelda(cuerpo.hora || ""),
+    forzarTextoEnCelda(cuerpo.fecha || ""),
+    forzarTextoEnCelda(cuerpo.hora || ""),
     sanitizarParaCelda(cuerpo.nota || ""),
     sanitizarParaCelda(fechaSolicitud),
     "Pendente"
@@ -1097,7 +1101,9 @@ function obtenerCitasExtra() {
     return { exito: true, citasExtra: [] };
   }
 
-  var datos = hoja.getDataRange().getValues();
+  // Usar getDisplayValues para evitar o desfase LMT de Europe/Madrid cando
+  // unha cela estea almacenada internamente como Date (epoch 1899-12-30).
+  var datos = hoja.getDataRange().getDisplayValues();
   var citasExtra = [];
 
   for (var i = 1; i < datos.length; i++) {
@@ -1262,7 +1268,9 @@ function obtenerMisReasignaciones(e) {
     return { exito: true, reasignaciones: [] };
   }
 
-  var datos = hoja.getDataRange().getValues();
+  // Usar getDisplayValues para evitar o desfase LMT de Europe/Madrid cando
+  // unha cela estea almacenada internamente como Date (epoch 1899-12-30).
+  var datos = hoja.getDataRange().getDisplayValues();
   var reasignaciones = [];
 
   for (var i = 1; i < datos.length; i++) {
@@ -1311,8 +1319,8 @@ function solicitarReasignacion(e, cuerpo) {
 
   hoja.appendRow([
     sanitizarParaCelda(nombreCliente),
-    sanitizarParaCelda(cuerpo.fechaCita || ""),
-    sanitizarParaCelda(cuerpo.horaCita || ""),
+    forzarTextoEnCelda(cuerpo.fechaCita || ""),
+    forzarTextoEnCelda(cuerpo.horaCita || ""),
     sanitizarParaCelda(cuerpo.servicio || ""),
     sanitizarParaCelda(cuerpo.motivo || ""),
     sanitizarParaCelda(cuerpo.comentario || ""),
@@ -1340,7 +1348,9 @@ function obtenerReasignaciones() {
     return { exito: true, reasignaciones: [] };
   }
 
-  var datos = hoja.getDataRange().getValues();
+  // Usar getDisplayValues para evitar o desfase LMT de Europe/Madrid cando
+  // unha cela estea almacenada internamente como Date (epoch 1899-12-30).
+  var datos = hoja.getDataRange().getDisplayValues();
   var reasignaciones = [];
 
   for (var i = 1; i < datos.length; i++) {
@@ -1482,6 +1492,29 @@ function actualizarReasignacion(cuerpo) {
   return { exito: true, mensaje: "Solicitude de reasignacion actualizada a: " + nuevoEstado };
 }
 
+// ============================================================
+// ELIMINAR UNHA SOLICITUDE DE REASIGNACION DO LISTADO (ADMIN)
+// Borra a fila, non cambia estado. Non libera nin move citas.
+// ============================================================
+function eliminarReasignacion(cuerpo) {
+  var indice = cuerpo.indice;
+  if (!indice) {
+    return { exito: false, mensaje: "Falta o parametro: indice" };
+  }
+
+  var hoja = obtenerHoja(PESTANA_REASIGNACIONES);
+  if (!hoja) {
+    return { exito: false, mensaje: "Non se atopou a folla de reasignacions" };
+  }
+
+  if (indice < 2 || indice > hoja.getLastRow()) {
+    return { exito: false, mensaje: "Indice fora de rango" };
+  }
+
+  hoja.deleteRow(indice);
+  return { exito: true, mensaje: "Solicitude de reasignacion eliminada" };
+}
+
 function obtenerOCrearHojaReasignaciones() {
   var libroHojas = SpreadsheetApp.openById(obtenerIdHoja());
   var hoja = libroHojas.getSheetByName(PESTANA_REASIGNACIONES);
@@ -1490,6 +1523,9 @@ function obtenerOCrearHojaReasignaciones() {
     hoja = libroHojas.insertSheet(PESTANA_REASIGNACIONES);
     hoja.appendRow(["Cliente", "Fecha cita", "Hora cita", "Servicio", "Motivo", "Comentario", "Fecha solicitud", "Estado"]);
     hoja.getRange(1, 1, 1, 8).setFontWeight("bold");
+    // Forzar texto plano en Fecha cita (B) e Hora cita (C) para evitar
+    // auto-parseo como Date (desfase LMT de Europe/Madrid).
+    hoja.getRange("B:C").setNumberFormat("@");
   }
 
   return hoja;
@@ -1698,6 +1734,16 @@ function sanitizarParaCelda(valor) {
   return texto;
 }
 
+// Forzar que Sheets garde o valor como texto plano (non auto-parsealo como
+// data/hora). Previne o desfase de +15 min causado polo LMT de Europe/Madrid
+// ao reler celas "HH:mm" como Date co epoch 1899-12-30.
+function forzarTextoEnCelda(valor) {
+  if (valor === null || valor === undefined) return "";
+  var texto = valor.toString();
+  if (texto === "") return "";
+  return "'" + texto;
+}
+
 // ============================================================
 // FUNCIONES AUXILIARES
 // ============================================================
@@ -1736,6 +1782,9 @@ function obtenerOCrearHojaCitasExtra() {
     hoja = libroHojas.insertSheet(PESTANA_CITAS_EXTRA);
     hoja.appendRow(["Cliente", "Servicio", "Fecha preferida", "Hora preferida", "Nota", "Fecha solicitud", "Estado"]);
     hoja.getRange(1, 1, 1, 7).setFontWeight("bold");
+    // Forzar texto plano en Fecha preferida (C) e Hora preferida (D) para
+    // evitar auto-parseo como Date (desfase LMT de Europe/Madrid).
+    hoja.getRange("C:D").setNumberFormat("@");
   }
 
   return hoja;
@@ -1976,6 +2025,11 @@ function crearRespuesta(datos) {
 // NOTIFICACIÓN POR TELEGRAM AO ADMIN
 // ============================================================
 function enviarTelegramAdmin(texto) {
+  // Notificacions de Telegram DESACTIVADAS temporalmente.
+  // Para reactivar: eliminar as dúas liñas seguintes.
+  Logger.log("[Telegram desactivado] " + texto);
+  return;
+
   try {
     var props = PropertiesService.getScriptProperties();
     var token = props.getProperty("TELEGRAM_BOT_TOKEN");
