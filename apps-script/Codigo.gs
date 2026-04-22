@@ -571,16 +571,18 @@ function actualizarCancelacion(cuerpo) {
 // co contido da clave privada do JSON da conta de servizo
 // ============================================================
 function enviarNotificacionPushCliente(nombreCliente, estado) {
+  enviarPushAoCliente(nombreCliente, "A tua solicitude de cancelacion foi " + estado.toLowerCase(), "cancelacion", estado);
+}
+
+// Funcion xenérica para enviar push a un cliente
+function enviarPushAoCliente(nomeCliente, mensaxe, tipo, estado) {
   try {
-    var tokenPush = obtenerTokenPushCliente(nombreCliente);
+    var tokenPush = obtenerTokenPushCliente(nomeCliente);
 
     if (!tokenPush) {
-      Logger.log("Non se atopou token push para o cliente: " + nombreCliente);
+      Logger.log("Non se atopou token push para o cliente: " + nomeCliente);
       return;
     }
-
-    var estadoTexto = estado.toLowerCase();
-    var mensaxe = "A tua solicitude de cancelacion foi " + estadoTexto;
 
     var accessToken = obterAccessTokenFCM();
     if (!accessToken) {
@@ -595,7 +597,7 @@ function enviarNotificacionPushCliente(nombreCliente, estado) {
       message: {
         token: tokenPush,
         notification: {
-          title: "Peluqueria Raul",
+          title: "Barbería Raúl",
           body: mensaxe
         },
         android: {
@@ -606,24 +608,19 @@ function enviarNotificacionPushCliente(nombreCliente, estado) {
           }
         },
         data: {
-          tipo: "cancelacion",
-          estado: estado
+          tipo: tipo || "xeral",
+          estado: estado || ""
         }
       }
     };
 
-    var opciones = {
+    UrlFetchApp.fetch(url, {
       method: "post",
       contentType: "application/json",
-      headers: {
-        "Authorization": "Bearer " + accessToken
-      },
+      headers: { "Authorization": "Bearer " + accessToken },
       payload: JSON.stringify(payload),
       muteHttpExceptions: true
-    };
-
-    var resposta = UrlFetchApp.fetch(url, opciones);
-    Logger.log("FCM V1 resposta: " + resposta.getContentText());
+    });
 
   } catch (error) {
     Logger.log("Erro ao enviar notificacion push: " + error.message);
@@ -1191,50 +1188,7 @@ function actualizarCitaExtra(cuerpo) {
   }
 
   // Enviar notificacion push ao cliente
-  try {
-    var tokenPush = obtenerTokenPushCliente(nomeCliente);
-    if (tokenPush) {
-      var estadoTexto = nuevoEstado.toLowerCase();
-      var mensaxe = "A tua solicitude de cita extra foi " + estadoTexto;
-
-      var accessToken = obterAccessTokenFCM();
-      if (accessToken) {
-        var projectId = "app-barberia-20e9d";
-        var url = "https://fcm.googleapis.com/v1/projects/" + projectId + "/messages:send";
-
-        var payload = {
-          message: {
-            token: tokenPush,
-            notification: {
-              title: "Peluqueria Raul",
-              body: mensaxe
-            },
-            android: {
-              priority: "high",
-              notification: {
-                sound: "default",
-                channel_id: "default"
-              }
-            },
-            data: {
-              tipo: "cita_extra",
-              estado: nuevoEstado
-            }
-          }
-        };
-
-        UrlFetchApp.fetch(url, {
-          method: "post",
-          contentType: "application/json",
-          headers: { "Authorization": "Bearer " + accessToken },
-          payload: JSON.stringify(payload),
-          muteHttpExceptions: true
-        });
-      }
-    }
-  } catch (error) {
-    Logger.log("Erro ao enviar notificacion push de cita extra: " + error.message);
-  }
+  enviarPushAoCliente(nomeCliente, "A tua solicitude de cita extra foi " + nuevoEstado.toLowerCase(), "cita_extra", nuevoEstado);
 
   return { exito: true, mensaje: "Solicitude de cita extra actualizada a: " + nuevoEstado };
 }
@@ -1434,50 +1388,7 @@ function actualizarReasignacion(cuerpo) {
   }
 
   // Enviar notificacion push ao cliente
-  try {
-    var tokenPush = obtenerTokenPushCliente(nomeCliente);
-    if (tokenPush) {
-      var estadoTexto = nuevoEstado.toLowerCase();
-      var mensaxe = "A tua solicitude de reasignacion foi " + estadoTexto;
-
-      var accessToken = obterAccessTokenFCM();
-      if (accessToken) {
-        var projectId = "app-barberia-20e9d";
-        var url = "https://fcm.googleapis.com/v1/projects/" + projectId + "/messages:send";
-
-        var payload = {
-          message: {
-            token: tokenPush,
-            notification: {
-              title: "Peluqueria Raul",
-              body: mensaxe
-            },
-            android: {
-              priority: "high",
-              notification: {
-                sound: "default",
-                channel_id: "default"
-              }
-            },
-            data: {
-              tipo: "reasignacion",
-              estado: nuevoEstado
-            }
-          }
-        };
-
-        UrlFetchApp.fetch(url, {
-          method: "post",
-          contentType: "application/json",
-          headers: { "Authorization": "Bearer " + accessToken },
-          payload: JSON.stringify(payload),
-          muteHttpExceptions: true
-        });
-      }
-    }
-  } catch (error) {
-    Logger.log("Erro ao enviar notificacion push de reasignacion: " + error.message);
-  }
+  enviarPushAoCliente(nomeCliente, "A tua solicitude de reasignacion foi " + nuevoEstado.toLowerCase(), "reasignacion", nuevoEstado);
 
   return { exito: true, mensaje: "Solicitude de reasignacion actualizada a: " + nuevoEstado };
 }
@@ -1876,7 +1787,7 @@ function compararFechas(fecha1, fecha2) {
 // ============================================================
 // RECORDATORIO SEMANAL DE CITAS
 // Executa diariamente, envia notificacion push aos clientes
-// que teñen unha cita dentro de 7 dias
+// que teñen unha cita dentro de 7 dias ou 1 dia
 //
 // CONFIGURACION:
 // No editor de Apps Script, ir a "Activadores" (icono do reloxo)
@@ -1891,9 +1802,11 @@ function enviarRecordatoriosSemanais() {
   var hoxe = new Date();
   hoxe.setHours(0, 0, 0, 0);
 
-  // Data dentro de 7 dias
+  // Datas para recordatorios: 7 dias e 1 dia antes
   var dentroDeUnhaSemana = new Date(hoxe);
   dentroDeUnhaSemana.setDate(dentroDeUnhaSemana.getDate() + 7);
+  var manhan = new Date(hoxe);
+  manhan.setDate(manhan.getDate() + 1);
 
   var NOMES_DIAS = ['Domingo', 'Luns', 'Martes', 'Mercores', 'Xoves', 'Venres', 'Sabado'];
   var NOMES_MESES = ['xaneiro', 'febreiro', 'marzo', 'abril', 'maio', 'xuno', 'xullo', 'agosto', 'setembro', 'outubro', 'novembro', 'decembro'];
@@ -1904,8 +1817,10 @@ function enviarRecordatoriosSemanais() {
     var fechaCita = parsearFecha(datos[i][0]);
     if (!fechaCita) continue;
 
-    // Comprobar se a cita e exactamente dentro de 7 dias
-    if (fechaCita.getTime() === dentroDeUnhaSemana.getTime()) {
+    // Comprobar se a cita e dentro de 7 dias ou manhan
+    var eUnhaSemana = fechaCita.getTime() === dentroDeUnhaSemana.getTime();
+    var eManhan = fechaCita.getTime() === manhan.getTime();
+    if (eUnhaSemana || eManhan) {
       var nomeCliente = datos[i][3].toString().trim();
       var hora = formatearValorHora(datos[i][2]);
       var servizo = datos[i][4] ? datos[i][4].toString() : "";
@@ -1917,48 +1832,11 @@ function enviarRecordatoriosSemanais() {
       var dia = fechaCita.getDate();
       var mes = NOMES_MESES[fechaCita.getMonth()];
 
-      var mensaxe = "Tes cita o " + nomeDia + " " + dia + " de " + mes + " as " + hora + "h - " + servizo;
+      var prefixo = eManhan ? "Manhan tes cita" : "Tes cita o " + nomeDia + " " + dia + " de " + mes;
+      var mensaxe = prefixo + " as " + hora + "h - " + servizo;
 
       // Buscar o token push do cliente e enviar
-      var tokenPush = obtenerTokenPushCliente(nomeCliente);
-      if (tokenPush) {
-        try {
-          var accessToken = obterAccessTokenFCM();
-          if (!accessToken) continue;
-
-          var projectId = "app-barberia-20e9d";
-          var url = "https://fcm.googleapis.com/v1/projects/" + projectId + "/messages:send";
-
-          var payload = {
-            message: {
-              token: tokenPush,
-              notification: {
-                title: "Peluqueria Raul - Recordatorio",
-                body: mensaxe
-              },
-              android: {
-                priority: "high",
-                notification: {
-                  sound: "default",
-                  channel_id: "default"
-                }
-              }
-            }
-          };
-
-          UrlFetchApp.fetch(url, {
-            method: "post",
-            contentType: "application/json",
-            headers: { "Authorization": "Bearer " + accessToken },
-            payload: JSON.stringify(payload),
-            muteHttpExceptions: true
-          });
-
-          Logger.log("Recordatorio enviado a: " + nomeCliente + " para o " + nomeDia + " " + dia);
-        } catch (error) {
-          Logger.log("Erro ao enviar recordatorio a " + nomeCliente + ": " + error.message);
-        }
-      }
+      enviarPushAoCliente(nomeCliente, mensaxe, "recordatorio", "");
     }
   }
 }

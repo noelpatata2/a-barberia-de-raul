@@ -2,7 +2,7 @@
 
 // URL do Google Apps Script despregado como web app
 // IMPORTANTE: Substituir coa URL real despois de despregar o script
-export const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbx0qEiQqdmYyefZTWwWxfVGwoQ7tjBZurICAd8eed4KQ24M-6BCqJtecoPkDKvxDOR31g/exec';
+export const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzhVxFBmH582xywh-vm0OJgOJzebnAirdXGYeBBxsRXS-d8K31adGdCFPpgPTzv99Xv/exec';
 
 // Configuracion de Firebase
 // IMPORTANTE: Substituir cos datos reais do proxecto Firebase

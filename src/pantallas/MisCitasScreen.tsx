@@ -666,11 +666,6 @@ const estilos = StyleSheet.create({
     backgroundColor: COLORES_DISENO.blanco,
     borderRadius: 12,
     overflow: 'hidden',
-    elevation: 1,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.06,
-    shadowRadius: 3,
   },
   contenidoEstadistica: {
     flex: 1,
