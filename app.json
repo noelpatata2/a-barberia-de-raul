@@ -3,7 +3,6 @@
     "name": "Barbería Raúl",
     "slug": "peluqueria-raul-app",
     "scheme": "peluqueria-raul-app",
-    "owner": "noelpatata",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
@@ -15,7 +14,13 @@
       "backgroundColor": "#ffffff"
     },
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "bundleIdentifier": "com.barberiaderaul.app",
+      "googleServicesFile": "./Apple/GoogleService-Info.plist",
+      "infoPlist": {
+        "ITSAppUsesNonExemptEncryption": false
+      },
+      "buildNumber": "2"
     },
     "android": {
       "package": "com.barberiaderaul.app",
@@ -32,13 +37,22 @@
     },
     "plugins": [
       "expo-web-browser",
+      [
+        "expo-build-properties",
+        {
+          "ios": {
+            "useFrameworks": "static"
+          }
+        }
+      ],
       "@react-native-firebase/app",
       "@react-native-firebase/messaging"
     ],
     "extra": {
       "eas": {
-        "projectId": "d0b52a0b-52a7-4e13-9f0b-5f7c2453e187"
+        "projectId": "2c6becc6-4f73-4861-a7d8-7fb6066e442c"
       }
-    }
+    },
+    "owner": "navisystemlabs"
   }
 }

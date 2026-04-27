@@ -13,6 +13,7 @@ export const FIREBASE_CONFIG = {
   storageBucket: 'app-barberia-20e9d.firebasestorage.app',
   messagingSenderId: '771824265902',
   appId: '1:771824265902:android:9c71510dbec8bd55e9db3f',
+  appIdIos: '1:771824265902:ios:8444705339df63e2e9db3f',
 };
 
 // ID de cliente OAuth para Google Sign-In
@@ -21,6 +22,8 @@ export const FIREBASE_CONFIG = {
 export const GOOGLE_CLIENT_ID = '771824265902-qshcll5e32au9d2adu91v7pipe0peq2k.apps.googleusercontent.com';
 // Android client ID
 export const GOOGLE_CLIENT_ID_ANDROID = '771824265902-a95ke1d9ga57i7h0ppk3l1l5lrqdf70i.apps.googleusercontent.com';
+// iOS client ID
+export const GOOGLE_CLIENT_ID_IOS = '771824265902-b4ll8gj3ruo4a10n600buh1sat1qpvud.apps.googleusercontent.com';
 
 // Nome da peluqueria
 export const NOMBRE_PELUQUERIA = 'Barbería Raúl';

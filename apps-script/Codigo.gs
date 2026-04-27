@@ -618,13 +618,21 @@ function enviarPushAoCliente(nomeCliente, mensaxe, tipo, estado) {
       }
     };
 
-    UrlFetchApp.fetch(url, {
+    var resposta = UrlFetchApp.fetch(url, {
       method: "post",
       contentType: "application/json",
       headers: { "Authorization": "Bearer " + accessToken },
       payload: JSON.stringify(payload),
       muteHttpExceptions: true
     });
+
+    var codigo = resposta.getResponseCode();
+    var corpo = resposta.getContentText();
+    if (codigo >= 200 && codigo < 300) {
+      Logger.log("Push enviado OK a '" + nomeCliente + "' (" + codigo + ")");
+    } else {
+      Logger.log("ERRO FCM push a '" + nomeCliente + "' (" + codigo + "): " + corpo);
+    }
 
   } catch (error) {
     Logger.log("Erro ao enviar notificacion push: " + error.message);
@@ -1847,7 +1855,9 @@ function enviarRecordatoriosSemanais() {
   var hoja = obtenerHoja(PESTANA_CITAS);
   if (!hoja) return;
 
-  var datos = hoja.getDataRange().getValues();
+  // Usar getDisplayValues para evitar o desfase LMT de Europe/Madrid ao
+  // reler celas "HH:mm" como Date co epoch 1899-12-30.
+  var datos = hoja.getDataRange().getDisplayValues();
   var hoxe = new Date();
   hoxe.setHours(0, 0, 0, 0);
 
@@ -1929,4 +1939,46 @@ function enviarTelegramAdmin(texto) {
   } catch (e) {
     Logger.log("Erro enviando Telegram: " + e.message);
   }
+}
+
+// ============================================================
+// PROBAR NOTIFICACIÓN (TEST)
+// Envía unha notificación de proba a un cliente, sen filtros de data.
+//
+// USO:
+// 1. Editar a constante NOME_CLIENTE_TEST co nome exacto do cliente
+//    (tal como aparece na columna A da folla "Clientes")
+// 2. No editor de Apps Script, seleccionar "probarNotificacion" no
+//    desplegable de funcións e pulsar ▶ Executar
+// 3. Revisar o rexistro de execución para ver o resultado
+// ============================================================
+function probarNotificacion() {
+  // EDITAR esta constante co nome exacto do cliente destinatario
+  var NOME_CLIENTE_TEST = "CAMBIAR_AQUI";
+
+  Logger.log("=== PROBA DE NOTIFICACIÓN ===");
+  Logger.log("Cliente destino: '" + NOME_CLIENTE_TEST + "'");
+
+  var token = obtenerTokenPushCliente(NOME_CLIENTE_TEST);
+  if (!token) {
+    Logger.log("ERRO: Non se atopou token push para '" + NOME_CLIENTE_TEST + "'");
+    Logger.log(" - Verifica que o cliente existe na folla '" + PESTANA_CLIENTES + "'");
+    Logger.log(" - Verifica que a columna 'TokenPush' ten valor para ese cliente");
+    Logger.log(" - Verifica que o cliente abriu a app e concedeu permisos de notificación");
+    Logger.log(" - Comproba que o nome coincide exactamente (ignora maiúsculas)");
+    return;
+  }
+
+  Logger.log("Token atopado: " + token.substring(0, 30) + "... (" + token.length + " car.)");
+
+  var mensaxe = "Notificación de proba - " + new Date().toLocaleTimeString();
+  Logger.log("Enviando mensaxe: " + mensaxe);
+
+  enviarPushAoCliente(NOME_CLIENTE_TEST, mensaxe, "proba", "");
+
+  Logger.log("=== FIN DA PROBA ===");
+  Logger.log("Se o log pon 'Push enviado OK' pero non chegou ao móbil, revisa:");
+  Logger.log(" - Permisos de notificación da app nos axustes do móbil");
+  Logger.log(" - Que a app non estea forzosamente pechada ou sen conexión");
+  Logger.log(" - Que o token non caducase (resolve facendo login de novo na app)");
 }
