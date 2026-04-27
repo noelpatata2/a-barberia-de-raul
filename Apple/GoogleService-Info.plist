@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>CLIENT_ID</key>
+	<string>771824265902-b4ll8gj3ruo4a10n600buh1sat1qpvud.apps.googleusercontent.com</string>
+	<key>REVERSED_CLIENT_ID</key>
+	<string>com.googleusercontent.apps.771824265902-b4ll8gj3ruo4a10n600buh1sat1qpvud</string>
+	<key>ANDROID_CLIENT_ID</key>
+	<string>771824265902-a95ke1d9ga57i7h0ppk3l1l5lrqdf70i.apps.googleusercontent.com</string>
+	<key>API_KEY</key>
+	<string>AIzaSyAmPbJqhOb12M5_OA22nbjqmsVq7Kj4MKk</string>
+	<key>GCM_SENDER_ID</key>
+	<string>771824265902</string>
+	<key>PLIST_VERSION</key>
+	<string>1</string>
+	<key>BUNDLE_ID</key>
+	<string>com.barberiaderaul.app</string>
+	<key>PROJECT_ID</key>
+	<string>app-barberia-20e9d</string>
+	<key>STORAGE_BUCKET</key>
+	<string>app-barberia-20e9d.firebasestorage.app</string>
+	<key>IS_ADS_ENABLED</key>
+	<false></false>
+	<key>IS_ANALYTICS_ENABLED</key>
+	<false></false>
+	<key>IS_APPINVITE_ENABLED</key>
+	<true></true>
+	<key>IS_GCM_ENABLED</key>
+	<true></true>
+	<key>IS_SIGNIN_ENABLED</key>
+	<true></true>
+	<key>GOOGLE_APP_ID</key>
+	<string>1:771824265902:ios:8444705339df63e2e9db3f</string>
+</dict>
+</plist>
