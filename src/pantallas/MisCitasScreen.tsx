@@ -663,9 +663,6 @@ const estilos = StyleSheet.create({
   },
   cajaEstadistica: {
     flex: 1,
-    backgroundColor: COLORES_DISENO.blanco,
-    borderRadius: 12,
-    overflow: 'hidden',
   },
   contenidoEstadistica: {
     flex: 1,
